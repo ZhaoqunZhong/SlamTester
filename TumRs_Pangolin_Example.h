@@ -15,9 +15,6 @@ namespace SlamTester {
         TumRsPangolinInput(std::string &cam_config, std::string &ros_bag);
         ~TumRsPangolinInput() override {};
 
-
-    private:
-
     };
 
 

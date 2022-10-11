@@ -14,8 +14,8 @@ SlamTester::TumRsPangolinInput::TumRsPangolinInput(std::string &cam_config, std:
     if (camf["cam0"]["resolution"]) {
         LOG(INFO) << "Read video resolution.";
         auto video_size = camf["cam0"]["resolution"].as<std::vector<int>>();
-        width = video_size[0];
-        height = video_size[1];
+        orig_w = video_size[0];
+        orig_h = video_size[1];
     }
 
 }

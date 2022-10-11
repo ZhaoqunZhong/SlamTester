@@ -17,7 +17,9 @@ add_executable(${PROJECT_NAME}
         main.cpp
         PangolinViewer.cpp
 #        TumRs_VinsMono.cpp
-        TumRs_Pangolin_Example.cpp)
+        TumRs_Pangolin_Example.cpp
+        Undistort.cpp
+        )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
         pango_display
@@ -26,11 +28,11 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         ${OpenCV_LIBS}
         glog::glog
         yaml-cpp
-)
+        )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
         ${OpenCV_INCLUDE_DIRS}
-)
+        )
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin") # MacOS
     target_include_directories(${PROJECT_NAME} PUBLIC
