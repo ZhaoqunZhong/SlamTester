@@ -16,10 +16,9 @@ add_subdirectory(rosbag)
 add_executable(${PROJECT_NAME}
         main.cpp
         PangolinViewer.cpp
-#        TumRs_VinsMono.cpp
+        #        TumRs_VinsMono.cpp
         TumRs_Pangolin_Example.cpp
-        Undistort.cpp
-        )
+        SlamInterface.cpp)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
         pango_display
@@ -38,4 +37,4 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin") # MacOS
     target_include_directories(${PROJECT_NAME} PUBLIC
             /opt/homebrew/include # for GL/glew.h
             )
-endif()
+endif ()

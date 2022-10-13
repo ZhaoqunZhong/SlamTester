@@ -17,7 +17,7 @@ namespace SlamTester {
     class PangolinViewer : public OutputInterface {
     public:
 
-        PangolinViewer(int w, int h, bool startRunThread = true);
+        PangolinViewer(int video_w, int video_h, int algo_w, int algo_h, bool startRunThread = true);
 
         ~PangolinViewer() override;
 
@@ -50,7 +50,7 @@ namespace SlamTester {
         std::thread runThread;
         bool ownThread;
         bool running;
-        int w, h;
+        int video_w, video_h, algo_w, algo_h;
 
         // images rendering
         std::mutex openImagesMutex;

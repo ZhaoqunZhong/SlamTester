@@ -207,17 +207,17 @@ int main(int argc, char **argv) {
     FLAGS_logtostdout = true;
     FLAGS_colorlogtostdout = true;
     google::InitGoogleLogging(argv[0]);
-    // google::InstallFailureSignalHandler();
+    google::InstallFailureSignalHandler();
 
 
     std::string ros_bag = "/Users/zhongzhaoqun/Downloads/dataset-seq1.bag";
-    std::string cam_config = "/Users/zhongzhaoqun/Downloads/dataset-seq1/dso/camchain.yaml";
+    std::string cam_config = "/Users/zhongzhaoqun/Downloads/dataset-seq1/dso/cam1/camera.txt";
     auto tumRS_input_pangolin = std::make_shared<SlamTester::TumRsPangolinInput>(cam_config, ros_bag);
     algorithm_inter->input_interfaces.push_back(tumRS_input_pangolin);
 
 
-    auto pango_viewer = std::make_shared<SlamTester::PangolinViewer>
-            (tumRS_input_pangolin->orig_w, tumRS_input_pangolin->orig_h, false);
+    auto pango_viewer = std::make_shared<SlamTester::PangolinViewer>(tumRS_input_pangolin->orig_w,
+         tumRS_input_pangolin->orig_h, tumRS_input_pangolin->inner_w, tumRS_input_pangolin->inner_h, false);
     algorithm_inter->output_interfaces.push_back(pango_viewer);
 
     algorithm_inter->start();
@@ -230,7 +230,7 @@ int main(int argc, char **argv) {
         ob_slam::rosbag::View::iterator iter; uint i;
         bool imu_synced = false;
 
-        float playbackSpeed = 1;
+        float playbackSpeed = 0.5;
         double firstMsgTime = view.begin()->getTime().toSec();
         double initial_offset = 0;
         struct timeval tv_start;

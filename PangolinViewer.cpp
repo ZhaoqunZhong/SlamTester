@@ -11,16 +11,18 @@
 
 namespace SlamTester {
 
-    PangolinViewer::PangolinViewer(int w, int h, bool startRunThread) {
-        this->w = w;
-        this->h = h;
+    PangolinViewer::PangolinViewer(int video_w, int video_h, int algo_w, int algo_h, bool startRunThread) {
+        this->video_w = video_w;
+        this->video_h = video_h;
+        this->algo_w = algo_w;
+        this->algo_h = algo_h;
         running = true;
         ownThread = startRunThread;
 
         {
             std::unique_lock<std::mutex> lk(openImagesMutex);
-            videoImg = std::make_unique<MinimalImageB3>(w, h);
-            processImg = std::make_unique<MinimalImageB3>(w, h);
+            videoImg = std::make_unique<MinimalImageB3>(video_w, video_h);
+            processImg = std::make_unique<MinimalImageB3>(algo_w, algo_h);
             videoImgChanged = processImgChanged = true;
 
             videoImg->setBlack();
@@ -55,39 +57,40 @@ namespace SlamTester {
     void PangolinViewer::run() {
         printf("START PANGOLIN!\n");
 
-        pangolin::CreateWindowAndBind("Main", w, h);
+        pangolin::CreateWindowAndBind("Main", video_w, video_h);
         const int UI_WIDTH = 200;
 
         glEnable(GL_DEPTH_TEST);
 
         // 3D visualization
         pangolin::OpenGlRenderState Visualization3D_camera(
-                pangolin::ProjectionMatrix(w, h, 400, 400, w / 2, h / 2, 0.1, 1000),
+                pangolin::ProjectionMatrix(video_w, video_h, 400, 400, video_w / 2, video_h / 2, 0.1, 1000),
                 pangolin::ModelViewLookAt(-0, -5, -10, 0, 0, 0, pangolin::AxisNegY)
         );
 
         pangolin::View &Visualization3D_display = pangolin::CreateDisplay()
-                .SetBounds(0.0, 1.0, pangolin::Attach::Pix(UI_WIDTH), 1.0, -w / (float) h)
+                .SetBounds(0.0, 1.0, pangolin::Attach::Pix(UI_WIDTH), 1.0, -video_w / (float) video_h)
                 .SetHandler(new pangolin::Handler3D(Visualization3D_camera));
 
 
         // 2 images
-        pangolin::View &d_process = pangolin::Display("imgProcess")
-                .SetAspect(w / (float) h);
-
         pangolin::View &d_video = pangolin::Display("imgVideo")
-                .SetAspect(w / (float) h);
+                .SetAspect(video_w / (float) video_h);
+
+        pangolin::View &d_process = pangolin::Display("imgProcess")
+                .SetAspect(algo_w / (float) algo_h);
 
 
-        pangolin::GlTexture texProcess(w, h, GL_RGB, false, 0, GL_RGB, GL_UNSIGNED_BYTE);
-        pangolin::GlTexture texVideo(w, h, GL_RGB, false, 0, GL_RGB, GL_UNSIGNED_BYTE);
+        pangolin::GlTexture texProcess(algo_w, algo_h, GL_RGB, false, 0, GL_RGB, GL_UNSIGNED_BYTE);
+        pangolin::GlTexture texVideo(video_w, video_h, GL_RGB, false, 0, GL_RGB, GL_UNSIGNED_BYTE);
 
 
         pangolin::CreateDisplay()
                 .SetBounds(0.0, 0.3, pangolin::Attach::Pix(UI_WIDTH), 1.0)
+                // .SetLock(pangolin::LockRight, pangolin::LockBottom)
                 .SetLayout(pangolin::LayoutEqual)
-                .AddDisplay(d_process)
-                .AddDisplay(d_video);
+                .AddDisplay(d_video)
+                .AddDisplay(d_process);
 
         // parameter reconfigure gui
         pangolin::CreatePanel("ui").SetBounds(0.0, 1.0, 0.0, pangolin::Attach::Pix(UI_WIDTH));
@@ -310,7 +313,7 @@ namespace SlamTester {
         }
 
         std::unique_lock<std::mutex> lk(openImagesMutex);
-        
+
         struct timeval time_now;
         gettimeofday(&time_now, NULL);
         lastNrgbMsgMs.push_back(
@@ -324,7 +327,7 @@ namespace SlamTester {
         if (rgb.depth() == CV_16U) {
             typedef cv::Point3_<uint16_t> Pixel;
             rgb.forEach<Pixel>([this](Pixel &p, const int *position) -> void {
-                int idx = position[1] + position[0] * this->w;
+                int idx = position[1] + position[0] * this->video_w;
                 videoImg->data[idx][0] = p.x / 256;
                 videoImg->data[idx][1] = p.y / 256;
                 videoImg->data[idx][2] = p.z / 256;
@@ -332,7 +335,7 @@ namespace SlamTester {
         } else if (rgb.depth() == CV_8U) {
             typedef cv::Point3_<uint8_t> Pixel;
             rgb.forEach<Pixel>([this](Pixel &p, const int *position) -> void {
-                int idx = position[1] + position[0] * this->w;
+                int idx = position[1] + position[0] * this->video_w;
                 videoImg->data[idx][0] = p.x;
                 videoImg->data[idx][1] = p.y;
                 videoImg->data[idx][2] = p.z;
@@ -350,7 +353,7 @@ namespace SlamTester {
         // Equally effective method for CV_16U.
 /*        cv::Mat rgb888;
         rgb.convertTo(rgb888, CV_8U, 1.0/256);
-        memcpy(videoImg->data, rgb888.data, w*h*3);
+        memcpy(videoImg->data, rgb888.data, video_w*video_h*3);
 
         struct timeval time2;
         gettimeofday(&time2, NULL);
@@ -364,7 +367,9 @@ namespace SlamTester {
         if (!setting_render_displayProcess) return;
 
         cv::Mat rgb;
-        if (process_img.channels() == 3) {
+        if (process_img.channels() == 1) {
+            cv::cvtColor(process_img, rgb, cv::COLOR_GRAY2RGB);
+        } else if (process_img.channels() == 3) {
             rgb = process_img;
         } else {
             LOG(ERROR) << "publishProcessImg: process_img incorrect num of channels!";
@@ -383,7 +388,7 @@ namespace SlamTester {
         if (rgb.depth() == CV_16U) {
             typedef cv::Point3_<uint16_t> Pixel;
             rgb.forEach<Pixel>([this](Pixel &p, const int *position) -> void {
-                int idx = position[1] + position[0] * this->w;
+                int idx = position[1] + position[0] * this->algo_w;
                 processImg->data[idx][0] = p.x / 256;
                 processImg->data[idx][1] = p.y / 256;
                 processImg->data[idx][2] = p.z / 256;
@@ -391,7 +396,7 @@ namespace SlamTester {
         } else if (rgb.depth() == CV_8U) {
             typedef cv::Point3_<uint8_t> Pixel;
             rgb.forEach<Pixel>([this](Pixel &p, const int *position) -> void {
-                int idx = position[1] + position[0] * this->w;
+                int idx = position[1] + position[0] * this->algo_w;
                 processImg->data[idx][0] = p.x;
                 processImg->data[idx][1] = p.y;
                 processImg->data[idx][2] = p.z;

@@ -7,7 +7,6 @@
 
 #include "opencv2/opencv.hpp"
 #include "Eigen/Core"
-#include "Undistort.h"
 
 namespace SlamTester {
     // PangolinViewer 'is' an OutputInterface.
@@ -26,9 +25,16 @@ namespace SlamTester {
     };
 
 
-
+    enum DistortModel{
+        PinHole,
+        RadTan,
+        EquiDistant,
+        KannalaBrandt,
+        FOV
+    };
     // A certain slam algorithm 'has' an InputInterface.
     // So use member class ptr.
+    // EASY to support multiple cameras.
     class InputInterface {
     public:
 
@@ -36,9 +42,12 @@ namespace SlamTester {
         virtual ~InputInterface() {}
 
         // Paras that read from config files.
+        cv::Matx33d cam_k;
+        std::vector<double> cam_distort;
+        DistortModel distort_model;
         double imu_na, imu_ra, imu_ng, imu_rg;
         Eigen::Matrix4d camToImu;
-        uint orig_w, orig_h, inner_w, inner_h;
+        uint orig_w, orig_h;
 
         // Offline data (No use for online running.)
         std::string data_bag;
@@ -50,9 +59,16 @@ namespace SlamTester {
         std::string ground_truth;
 
         // unDistortion
-        std::unique_ptr<Undistort> undistorter;
+        uint inner_w, inner_h;
+        cv::Mat remapX, remapY;
+        cv::Matx33d inner_cam_k;
+        virtual void undistortImg(cv::Mat in, cv::Mat &out);
 
+    protected:
+        virtual void getUndistorterFromFile(std::string configFilename, std::string gammaFilename, std::string vignetteFilename);
     };
+
+
 
 
     // A certain algorithm should contain both input and output interfaces.
