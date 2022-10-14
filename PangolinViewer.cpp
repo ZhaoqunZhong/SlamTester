@@ -92,10 +92,12 @@ namespace SlamTester {
                 .AddDisplay(d_video)
                 .AddDisplay(d_process);
 
+
         // parameter reconfigure gui
         pangolin::CreatePanel("ui").SetBounds(0.0, 1.0, 0.0, pangolin::Attach::Pix(UI_WIDTH));
-
+        pangolin::Var<bool> startButton("ui.Start", false, false);
 //	pangolin::Var<int> settings_pointCloudMode("ui.PC_mode",1,1,4,false);
+        pangolin::Var<float> settings_playRate("ui.PlayBackRate",1,0.25,4,false);
 
         pangolin::Var<bool> settings_showKFCameras("ui.KFCam", false, true);
         pangolin::Var<bool> settings_showCurrentCamera("ui.CurrCam", true, true);
@@ -110,14 +112,14 @@ namespace SlamTester {
         pangolin::Var<bool> settings_showLiveProcess("ui.showProcess", true, true);
         pangolin::Var<bool> settings_showLiveVideo("ui.showVideo", true, true);
 
-        pangolin::Var<bool> settings_resetButton("ui.Reset", false, false);
+        pangolin::Var<bool> resetButton("ui.Reset", false, false);
 
 
-        pangolin::Var<double> settings_imuFps("ui.ImuPoseFps", 0, 0, 0, false);
-        pangolin::Var<double> settings_camFps("ui.CamPoseFps", 0, 0, 0, false);
-        pangolin::Var<double> settings_rgbFps("ui.rgbMsgFps", 0, 0, 0, false);
-        pangolin::Var<double> settings_imuMsgFps("ui.imuMsgFps", 0, 0, 0, false);
-        pangolin::Var<double> settings_processImgFps("ui.processImgFps", 0, 0, 0, false);
+        pangolin::Var<double> display_imuFps("ui.ImuPoseFps", 0, 0, 0, false);
+        pangolin::Var<double> display_camFps("ui.CamPoseFps", 0, 0, 0, false);
+        pangolin::Var<double> display_rgbFps("ui.rgbMsgFps", 0, 0, 0, false);
+        pangolin::Var<double> display_imuMsgFps("ui.imuMsgFps", 0, 0, 0, false);
+        pangolin::Var<double> display_processImgFps("ui.processImgFps", 0, 0, 0, false);
 
         // Default hooks for exiting (Esc) and fullscreen (tab).
         while (!pangolin::ShouldQuit() && running) {
@@ -151,32 +153,32 @@ namespace SlamTester {
                 // model3DMutex.lock();
                 float sd = 0;
                 for (float d: lastNcamPoseMs) sd += d;
-                settings_camFps = lastNcamPoseMs.size() * 1000.0f / sd;
+                display_camFps = lastNcamPoseMs.size() * 1000.0f / sd;
                 // model3DMutex.unlock();
             }
             {
                 // model3DMutex.lock();
                 float sd = 0;
                 for (float d: lastNimuPoseMs) sd += d;
-                settings_imuFps = lastNimuPoseMs.size() * 1000.0f / sd;
+                display_imuFps = lastNimuPoseMs.size() * 1000.0f / sd;
                 // model3DMutex.unlock();
             }
             {
                 // model3DMutex.lock();
                 float sd = 0;
                 for (float d: lastNrgbMsgMs) sd += d;
-                settings_rgbFps = lastNrgbMsgMs.size() * 1000.0f / sd;
+                display_rgbFps = lastNrgbMsgMs.size() * 1000.0f / sd;
                 // model3DMutex.unlock();
             }
             {
                 float sd = 0;
                 for (float d: lastNimuMsgMs) sd += d;
-                settings_imuMsgFps = lastNimuMsgMs.size() * 1000.0f / sd;
+                display_imuMsgFps = lastNimuMsgMs.size() * 1000.0f / sd;
             }
             {
                 float sd = 0;
                 for (float d: lastNprocessImgMs) sd += d;
-                settings_processImgFps = lastNprocessImgMs.size() * 1000.0f / sd;
+                display_processImgFps = lastNprocessImgMs.size() * 1000.0f / sd;
             }
             model3DMutex.unlock();
 
@@ -202,15 +204,16 @@ namespace SlamTester {
             setting_render_showKFCameras = settings_showKFCameras.Get();
             setting_render_showTrajectory = settings_showTrajectory.Get();
             setting_render_showFullTrajectory = settings_showFullTrajectory.Get();
-
             setting_render_display3D = settings_show3D.Get();
             setting_render_displayProcess = settings_showLiveProcess.Get();
             setting_render_displayVideo = settings_showLiveVideo.Get();
+            control_started = startButton.Get();
+            setting_playback_rate = settings_playRate.Get();
 
 
-            if (settings_resetButton.Get()) {
+            if (resetButton.Get()) {
                 printf("RESET!\n");
-                settings_resetButton.Reset();
+                resetButton.Reset();
                 setting_render_fullResetRequested = true;
             }
 
@@ -264,6 +267,15 @@ namespace SlamTester {
         openImagesMutex.unlock();
 
         needReset = false;
+    }
+
+    void PangolinViewer::blockWaitForStart() {
+        while (!control_started)
+            usleep(5 * 1e3);
+    }
+
+    float PangolinViewer::getPlayRate() {
+        return setting_playback_rate;
     }
 
     void PangolinViewer::publishCamPose(Eigen::Matrix4d &cam_pose) {

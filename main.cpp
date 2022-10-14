@@ -209,13 +209,13 @@ int main(int argc, char **argv) {
     google::InitGoogleLogging(argv[0]);
     google::InstallFailureSignalHandler();
 
-
+    // Set up inputs.
     std::string ros_bag = "/Users/zhongzhaoqun/Downloads/dataset-seq1.bag";
-    std::string cam_config = "/Users/zhongzhaoqun/Downloads/dataset-seq1/dso/cam1/camera.txt";
+    std::string cam_config = "/Users/zhongzhaoqun/Downloads/dataset-seq1/dso/cam1/camera copy.txt";
     auto tumRS_input_pangolin = std::make_shared<SlamTester::TumRsPangolinInput>(cam_config, ros_bag);
     algorithm_inter->input_interfaces.push_back(tumRS_input_pangolin);
 
-
+    // Set up outputs.
     auto pango_viewer = std::make_shared<SlamTester::PangolinViewer>(tumRS_input_pangolin->orig_w,
          tumRS_input_pangolin->orig_h, tumRS_input_pangolin->inner_w, tumRS_input_pangolin->inner_h, false);
     algorithm_inter->output_interfaces.push_back(pango_viewer);
@@ -223,14 +223,15 @@ int main(int argc, char **argv) {
     algorithm_inter->start();
 
     std::thread tumRSdataThread([&]() {
+        pango_viewer->blockWaitForStart();
+
         ob_slam::rosbag::Bag play_bag;
         play_bag.open(tumRS_input_pangolin->data_bag, static_cast<uint32_t>(ob_slam::rosbag::BagMode::Read));
         ob_slam::rosbag::View view(play_bag, ob_slam::rosbag::TopicQuery(tumRS_input_pangolin->bag_topics),
                                    ob_slam::TIME_MIN, ob_slam::TIME_MAX);
         ob_slam::rosbag::View::iterator iter; uint i;
         bool imu_synced = false;
-
-        float playbackSpeed = 0.5;
+        
         double firstMsgTime = view.begin()->getTime().toSec();
         double initial_offset = 0;
         struct timeval tv_start;
@@ -244,7 +245,7 @@ int main(int argc, char **argv) {
 
             struct timeval tv_now; gettimeofday(&tv_now, nullptr);
             double sSinceStart = (tv_now.tv_sec-tv_start.tv_sec + (tv_now.tv_usec-tv_start.tv_usec)/1e6) - initial_offset;
-            double bag_time_since_start = (iter->getTime().toSec() - firstMsgTime) / playbackSpeed;
+            double bag_time_since_start = (iter->getTime().toSec() - firstMsgTime) / pango_viewer->getPlayRate();
 
             if (bag_time_since_start == 0) {
                 initial_offset = sSinceStart;
@@ -254,7 +255,7 @@ int main(int argc, char **argv) {
             // Since we didn't launch different threads for different sensor streams like online running,
             // we choose not to skip imu messages to stay closer to online scenario.
             else if (tumRS_input_pangolin->monoImg_topic == iter->getTopic() &&
-                    sSinceStart - bag_time_since_start > 0.033/playbackSpeed) {// Skip rgb msg if lagging more than 33ms.
+                    sSinceStart - bag_time_since_start > 0.033/pango_viewer->getPlayRate()) {// Skip rgb msg if lagging more than 33ms.
                 // LOG(WARNING) << "Skipped msg topic: " << iter->getTopic();
                 LOG(WARNING) << "Skipped rgb msg at bag time: " << std::to_string(iter->getTime().toSec());
                 continue;

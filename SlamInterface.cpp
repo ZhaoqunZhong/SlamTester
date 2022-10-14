@@ -33,27 +33,7 @@ namespace SlamTester {
 
         double ic[10];
         // l1
-        // for backwards-compatibility: Use RadTan model for 8 parameters.
-        if (std::sscanf(l1.c_str(), "%lf %lf %lf %lf %lf %lf %lf %lf",
-                        &ic[0], &ic[1], &ic[2], &ic[3],
-                        &ic[4], &ic[5], &ic[6], &ic[7]) == 8) {
-            printf("found RadTan (OpenCV) camera model, building rectifier.\n");
-            distort_model = RadTan;
-            cam_distort = {ic[4], ic[5], ic[6], ic[7]};
-        }
-            // for backwards-compatibility: Use Pinhole / FoV model for 5 parameter.
-        else if (std::sscanf(l1.c_str(), "%lf %lf %lf %lf %lf",
-                             &ic[0], &ic[1], &ic[2], &ic[3], &ic[4]) == 5) {
-            if (ic[4] == 0) {
-                printf("found PINHOLE camera model, building rectifier.\n");
-                distort_model = PinHole;
-            } else {
-                printf("found FOV camera model, not implemented yet, sorry.\n");
-                exit(1);
-            }
-        }
-            // clean model selection implementation.
-        else if (std::sscanf(l1.c_str(), "KannalaBrandt %lf %lf %lf %lf %lf %lf %lf %lf",
+        if (std::sscanf(l1.c_str(), "KannalaBrandt %lf %lf %lf %lf %lf %lf %lf %lf",
                              &ic[0], &ic[1], &ic[2], &ic[3],
                              &ic[4], &ic[5], &ic[6], &ic[7]) == 8) {
             printf("found KannalaBrandt camera model, building rectifier.\n");
@@ -65,6 +45,12 @@ namespace SlamTester {
             printf("found RadTan camera model, building rectifier.\n");
             distort_model = RadTan;
             cam_distort = {ic[4], ic[5], ic[6], ic[7]};
+        }else if (std::sscanf(l1.c_str(), "RadTan %lf %lf %lf %lf %lf %lf %lf %lf %lf",
+                              &ic[0], &ic[1], &ic[2], &ic[3],
+                              &ic[4], &ic[5], &ic[6], &ic[7], &ic[8]) == 9) {
+            printf("found RadTan camera model, building rectifier.\n");
+            distort_model = RadTan;
+            cam_distort = {ic[4], ic[5], ic[6], ic[7], ic[8]};
         } else if (std::sscanf(l1.c_str(), "EquiDistant %lf %lf %lf %lf %lf %lf %lf %lf",
                                &ic[0], &ic[1], &ic[2], &ic[3],
                                &ic[4], &ic[5], &ic[6], &ic[7]) == 8) {
@@ -76,12 +62,11 @@ namespace SlamTester {
                                &ic[4]) == 5) {
             printf("found FOV camera model, not implemented yet, sorry.\n");
             exit(1);
-        } else if (std::sscanf(l1.c_str(), "Pinhole %lf %lf %lf %lf %lf",
-                               &ic[0], &ic[1], &ic[2], &ic[3],
-                               &ic[4]) == 5) {
+        } else if (std::sscanf(l1.c_str(), "PinHole %lf %lf %lf %lf",
+                               &ic[0], &ic[1], &ic[2], &ic[3])) {
             printf("found Pinhole camera model, building rectifier.\n");
             distort_model = PinHole;
-            cam_distort.resize(0);
+            cam_distort = {0, 0, 0, 0};
         } else {
             printf("could not read calib file! exit.");
             exit(1);
@@ -112,7 +97,7 @@ namespace SlamTester {
         // l3
         if (l3 == "crop") {
             printf("Out: Rectify Crop\n");
-            if (distort_model == RadTan) {
+            if (distort_model == RadTan || distort_model == PinHole) {
                 inner_cam_k = cv::getOptimalNewCameraMatrix(cam_k, cam_distort, cv::Size2i(orig_w, orig_h), 0,
                                                             cv::Size2i(inner_w, inner_h));
                 cv::initUndistortRectifyMap(cam_k, cam_distort, empty, inner_cam_k, cv::Size2i(inner_w, inner_h),
@@ -127,7 +112,7 @@ namespace SlamTester {
 
         } else if (l3 == "full") {
             printf("Out: Rectify Full\n");
-            if (distort_model == RadTan) {
+            if (distort_model == RadTan || distort_model == PinHole) {
                 inner_cam_k = cv::getOptimalNewCameraMatrix(cam_k, cam_distort, cv::Size2i(orig_w, orig_h), 1,
                                                             cv::Size2i(inner_w, inner_h));
                 cv::initUndistortRectifyMap(cam_k, cam_distort, empty, inner_cam_k, cv::Size2i(inner_w, inner_h),
@@ -142,7 +127,7 @@ namespace SlamTester {
         } else if (l3 == "none") {
             printf("Out: No Rectification\n");
             inner_cam_k = cam_k;
-            if (distort_model == RadTan) {
+            if (distort_model == RadTan || distort_model == PinHole) {
                 cv::initUndistortRectifyMap(cam_k, cam_distort, empty, inner_cam_k, cv::Size2i(inner_w, inner_h),
                                             CV_32FC1, remapX, remapY);
             } else if (distort_model == EquiDistant || distort_model == KannalaBrandt) {
@@ -155,7 +140,7 @@ namespace SlamTester {
                    given_new_k[0], given_new_k[1], given_new_k[2], given_new_k[3],
                    given_new_k[4]);
             inner_cam_k = {given_new_k[0], 0, given_new_k[2], 0, given_new_k[1], given_new_k[3], 0, 0, 1};
-            if (distort_model == RadTan) {
+            if (distort_model == RadTan || distort_model == PinHole) {
                 cv::initUndistortRectifyMap(cam_k, cam_distort, empty, inner_cam_k, cv::Size2i(inner_w, inner_h),
                                             CV_32FC1, remapX, remapY);
             } else if (distort_model == EquiDistant || distort_model == KannalaBrandt) {
@@ -170,14 +155,14 @@ namespace SlamTester {
     }
 
     void InputInterface::undistortImg(cv::Mat in, cv::Mat &out) {
-        if (distort_model == PinHole)
-            out = in;
-        else if (distort_model == RadTan || distort_model == EquiDistant || distort_model == KannalaBrandt) {
+        if (distort_model == RadTan || distort_model == PinHole ||
+            distort_model == EquiDistant || distort_model == KannalaBrandt) {
             cv::remap(in, out, remapX, remapY, cv::INTER_LINEAR);
         }
         else {
             LOG(ERROR) << "Selected distort model not implemented yet.";
             exit(1);
         }
+
     }
 }

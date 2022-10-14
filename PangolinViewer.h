@@ -26,6 +26,8 @@ namespace SlamTester {
         bool isRunning();
         void join();
         void reset();
+        void blockWaitForStart();
+        float getPlayRate();
 
         // ==================== Slam results interface ======================
         void publishCamPose(Eigen::Matrix4d &cam_pose) override;
@@ -80,8 +82,9 @@ namespace SlamTester {
         bool setting_render_display3D;
         bool setting_render_displayVideo;
         bool setting_render_displayProcess;
-
         bool setting_render_fullResetRequested;
+        bool control_started;
+        float setting_playback_rate;
 
         // timings
         struct timeval last_camPose_t;
