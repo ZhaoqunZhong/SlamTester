@@ -12,13 +12,16 @@ find_package(yaml-cpp REQUIRED)
 #message("==> OpenCV_LIBS: ${OpenCV_LIBS}")
 
 add_subdirectory(rosbag)
+add_subdirectory(modify-vins-mono)
 
 add_executable(${PROJECT_NAME}
         main.cpp
         PangolinViewer.cpp
-        #        TumRs_VinsMono.cpp
+#        SlamInterface.cpp
+
         TumRs_Pangolin_Example.cpp
-        SlamInterface.cpp)
+#        modify-vins-mono/TumRs_VinsMono.cpp
+        )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
         pango_display
@@ -27,6 +30,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         ${OpenCV_LIBS}
         glog::glog
         yaml-cpp
+
+        modify_vins_mono
         )
 
 target_include_directories(${PROJECT_NAME} PUBLIC

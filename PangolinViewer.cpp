@@ -100,8 +100,8 @@ namespace SlamTester {
         pangolin::Var<float> settings_playRate("ui.PlayBackRate",1,0.25,4,false);
 
         pangolin::Var<bool> settings_showKFCameras("ui.KFCam", false, true);
-        pangolin::Var<bool> settings_showCurrentCamera("ui.CurrCam", true, true);
-        pangolin::Var<bool> settings_showCurrentImu("ui.CurrImu", false, true);
+        pangolin::Var<bool> settings_showCurrentCamera("ui.CurrCam", false, true);
+        pangolin::Var<bool> settings_showCurrentImu("ui.CurrImu", true, true);
         pangolin::Var<bool> settings_showTrajectory("ui.Trajectory", true, true);
         pangolin::Var<bool> settings_showFullTrajectory("ui.FullTrajectory", false, true);
         pangolin::Var<bool> settings_showActiveConstraints("ui.ActiveConst", true, true);
@@ -132,7 +132,7 @@ namespace SlamTester {
                 std::unique_lock<std::mutex> lk3d(model3DMutex);
                 //pangolin::glDrawColouredCube();
 
-                drawImu(2, nullptr, 0.1);
+                drawImu(2, nullptr, 0.4);
                 drawCam(2, nullptr, 0.2);
 
 //			drawConstraints();

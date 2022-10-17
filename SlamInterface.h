@@ -47,6 +47,7 @@ namespace SlamTester {
         DistortModel distort_model;
         double imu_na, imu_ra, imu_ng, imu_rg;
         Eigen::Matrix4d camToImu;
+        double timeshift_cam;
         uint orig_w, orig_h;
 
         // Offline data (No use for online running.)
@@ -55,7 +56,7 @@ namespace SlamTester {
         std::string imu_topic = "/imu0";
         std::string acc_topic = "/acc0";
         std::string gyr_topic = "/gyr0";
-        std::vector<std::string> bag_topics {monoImg_topic, imu_topic, acc_topic, gyr_topic};
+        std::vector<std::string> bag_topics;
         std::string ground_truth;
 
         // unDistortion
@@ -66,6 +67,7 @@ namespace SlamTester {
 
     protected:
         virtual void getUndistorterFromFile(std::string configFilename, std::string gammaFilename, std::string vignetteFilename);
+
     };
 
 
