@@ -103,7 +103,6 @@ namespace SlamTester {
         pangolin::Var<bool> settings_showCurrentCamera("ui.CurrCam", false, true);
         pangolin::Var<bool> settings_showCurrentImu("ui.CurrImu", true, true);
         pangolin::Var<bool> settings_showTrajectory("ui.Trajectory", true, true);
-        pangolin::Var<bool> settings_showFullTrajectory("ui.FullTrajectory", false, true);
         pangolin::Var<bool> settings_showActiveConstraints("ui.ActiveConst", true, true);
         pangolin::Var<bool> settings_showAllConstraints("ui.AllConst", false, true);
 
@@ -131,11 +130,26 @@ namespace SlamTester {
                 Visualization3D_display.Activate(Visualization3D_camera);
                 std::unique_lock<std::mutex> lk3d(model3DMutex);
                 //pangolin::glDrawColouredCube();
+                if (setting_render_showCurrentImu) {
+                    drawPose(2, red, 0.4, imuToWorld);
+                    allFramePoses.push_back(imuToWorld.block<3,1>(0,3));
+                }
+                if (setting_render_showCurrentCamera)
+                    drawPose(2, blue, 0.4, camToWorld);
+                if (setting_render_showTrajectory) {
+                    glColor3f(green[0], green[1], green[2]);
+                    glLineWidth(3);
+                    glBegin(GL_LINE_STRIP);
+                    for(unsigned int i=0;i<allFramePoses.size();i++)
+                    {
+                        glVertex3f((float)allFramePoses[i][0],
+                                   (float)allFramePoses[i][1],
+                                   (float)allFramePoses[i][2]);
+                    }
+                    glEnd();
+                }
 
-                drawImu(2, nullptr, 0.4);
-                drawCam(2, nullptr, 0.2);
 
-//			drawConstraints();
                 lk3d.unlock();
             }
 
@@ -203,7 +217,6 @@ namespace SlamTester {
             setting_render_showCurrentImu = settings_showCurrentImu.Get();
             setting_render_showKFCameras = settings_showKFCameras.Get();
             setting_render_showTrajectory = settings_showTrajectory.Get();
-            setting_render_showFullTrajectory = settings_showFullTrajectory.Get();
             setting_render_display3D = settings_show3D.Get();
             setting_render_displayProcess = settings_showLiveProcess.Get();
             setting_render_displayVideo = settings_showLiveVideo.Get();
@@ -293,7 +306,6 @@ namespace SlamTester {
 //    currentCam->setFromF(frame, HCalib);
 //    allFramePoses.push_back(frame->camToWorld.translation().cast<float>());
         camToWorld = cam_pose.cast<float>();
-        allFramePoses.emplace_back(camToWorld.block<3, 1>(0, 3));
     }
 
     void PangolinViewer::publishImuPose(Eigen::Matrix4d &imu_pose) {
@@ -313,7 +325,15 @@ namespace SlamTester {
 
     void PangolinViewer::publishVideoImg(cv::Mat video_img) {
         if (!setting_render_displayVideo) return;
-
+        
+        if (video_img.depth() == CV_16U) 
+            video_img.convertTo(video_img, CV_8U, 1.0/256);
+        else if (video_img.depth() == CV_8U) {}
+        else {
+            LOG(ERROR) << "publishVideoImg: Doesn't support this data type."; 
+            return;
+        }
+        
         cv::Mat rgb;
         if (video_img.channels() == 1) {
             cv::cvtColor(video_img, rgb, cv::COLOR_GRAY2RGB);
@@ -333,8 +353,11 @@ namespace SlamTester {
         if (lastNrgbMsgMs.size() > 10) lastNrgbMsgMs.pop_front();
         last_rgbMsg_t = time_now;
 
+        memcpy(videoImg->data, rgb.data, video_w * video_h *3);
+        videoImgChanged = true;
+        
 /*        struct timeval time0;
-        gettimeofday(&time0, NULL);*/
+        gettimeofday(&time0, NULL);
 
         if (rgb.depth() == CV_16U) {
             typedef cv::Point3_<uint16_t> Pixel;
@@ -357,7 +380,7 @@ namespace SlamTester {
             return;
         }
 
-/*        struct timeval time1;
+        struct timeval time1;
         gettimeofday(&time1, NULL);
         LOG_FIRST_N(INFO, 20) << "forEach function costs " <<
             (time1.tv_sec - time0.tv_sec) * 1000.0f + (time1.tv_usec - time0.tv_usec) / 1000.0f;*/
@@ -372,11 +395,18 @@ namespace SlamTester {
         LOG_FIRST_N(INFO, 20) << "convertTo and memcpy function costs " <<
             (time2.tv_sec - time1.tv_sec) * 1000.0f + (time2.tv_usec - time1.tv_usec) / 1000.0f;*/
 
-        videoImgChanged = true;
     }
 
     void PangolinViewer::publishProcessImg(cv::Mat process_img) {
         if (!setting_render_displayProcess) return;
+
+        if (process_img.depth() == CV_16U)
+            process_img.convertTo(process_img, CV_8U, 1.0/256);
+        else if (process_img.depth() == CV_8U) {}
+        else {
+            LOG(ERROR) << "publishProcessImg: Doesn't support this data type.";
+            return;
+        }
 
         cv::Mat rgb;
         if (process_img.channels() == 1) {
@@ -389,7 +419,7 @@ namespace SlamTester {
         }
 
         std::unique_lock<std::mutex> lk(openImagesMutex);
-        
+
         struct timeval time_now;
         gettimeofday(&time_now, NULL);
         lastNprocessImgMs.push_back(
@@ -397,27 +427,7 @@ namespace SlamTester {
         if (lastNprocessImgMs.size() > 10) lastNprocessImgMs.pop_front();
         last_processImg_t = time_now;
 
-        if (rgb.depth() == CV_16U) {
-            typedef cv::Point3_<uint16_t> Pixel;
-            rgb.forEach<Pixel>([this](Pixel &p, const int *position) -> void {
-                int idx = position[1] + position[0] * this->algo_w;
-                processImg->data[idx][0] = p.x / 256;
-                processImg->data[idx][1] = p.y / 256;
-                processImg->data[idx][2] = p.z / 256;
-            });
-        } else if (rgb.depth() == CV_8U) {
-            typedef cv::Point3_<uint8_t> Pixel;
-            rgb.forEach<Pixel>([this](Pixel &p, const int *position) -> void {
-                int idx = position[1] + position[0] * this->algo_w;
-                processImg->data[idx][0] = p.x;
-                processImg->data[idx][1] = p.y;
-                processImg->data[idx][2] = p.z;
-            });
-        } else {
-            LOG(ERROR) << "publishprocessImg: rgb img incorrect data type!";
-            return;
-        }
-
+        memcpy(processImg->data, rgb.data, algo_w * algo_h *3);
         processImgChanged = true;
     }
     
@@ -432,9 +442,8 @@ namespace SlamTester {
         last_imuMsg_t = time_now;
     }
 
-    void PangolinViewer::drawImu(float lineWidth, float *color, float sizeFactor) {
-        if (!setting_render_showCurrentImu)
-            return;
+
+    void PangolinViewer::drawPose(float lineWidth, float *color, float sizeFactor, Eigen::Matrix4f pose) {
 
         int width = 640, height = 480;
         float fx = 460, fy = 460, cx = width / 2.0, cy = height / 2.0;
@@ -442,59 +451,12 @@ namespace SlamTester {
 
         glPushMatrix();
 //    Sophus::Matrix4f m = camToWorld.matrix().cast<float>();
-        glMultMatrixf((GLfloat *) imuToWorld.data());
+        glMultMatrixf((GLfloat *) pose.data());
 
-
-/*        if (color == 0) {
-            glColor3f(1, 0, 0);
-        } else
-            glColor3f(color[0], color[1], color[2]);*/
-        glColor3f(1, 0, 0);
-
-        glLineWidth(lineWidth);
-        glBegin(GL_LINES);
-        glVertex3f(0, 0, 0);
-        glVertex3f(sz * (0 - cx) / fx, sz * (0 - cy) / fy, sz);
-        glVertex3f(0, 0, 0);
-        glVertex3f(sz * (0 - cx) / fx, sz * (height - 1 - cy) / fy, sz);
-        glVertex3f(0, 0, 0);
-        glVertex3f(sz * (width - 1 - cx) / fx, sz * (height - 1 - cy) / fy, sz);
-        glVertex3f(0, 0, 0);
-        glVertex3f(sz * (width - 1 - cx) / fx, sz * (0 - cy) / fy, sz);
-
-        glVertex3f(sz * (width - 1 - cx) / fx, sz * (0 - cy) / fy, sz);
-        glVertex3f(sz * (width - 1 - cx) / fx, sz * (height - 1 - cy) / fy, sz);
-
-        glVertex3f(sz * (width - 1 - cx) / fx, sz * (height - 1 - cy) / fy, sz);
-        glVertex3f(sz * (0 - cx) / fx, sz * (height - 1 - cy) / fy, sz);
-
-        glVertex3f(sz * (0 - cx) / fx, sz * (height - 1 - cy) / fy, sz);
-        glVertex3f(sz * (0 - cx) / fx, sz * (0 - cy) / fy, sz);
-
-        glVertex3f(sz * (0 - cx) / fx, sz * (0 - cy) / fy, sz);
-        glVertex3f(sz * (width - 1 - cx) / fx, sz * (0 - cy) / fy, sz);
-
-        glEnd();
-        glPopMatrix();
-    }
-
-    void PangolinViewer::drawCam(float lineWidth, float *color, float sizeFactor) {
-        if (!setting_render_showCurrentCamera)
-            return;
-
-        int width = 640, height = 480;
-        float fx = 460, fy = 460, cx = width / 2.0, cy = height / 2.0;
-        float sz = sizeFactor;
-
-        glPushMatrix();
-//    Sophus::Matrix4f m = camToWorld.matrix().cast<float>();
-        glMultMatrixf((GLfloat *) camToWorld.data());
-
-/*        if (color == 0) {
+        if (color == 0) {
             glColor3f(0, 0, 1);
         } else
-            glColor3f(color[0], color[1], color[2]);*/
-        glColor3f(0, 0, 1);
+            glColor3f(color[0], color[1], color[2]);
 
         glLineWidth(lineWidth);
         glBegin(GL_LINES);
@@ -522,7 +484,6 @@ namespace SlamTester {
         glEnd();
         glPopMatrix();
     }
-
 
 
 

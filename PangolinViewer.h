@@ -45,9 +45,7 @@ namespace SlamTester {
         void reset_internal();
 
         // void drawConstraints();
-
-        void drawImu(float lineWidth, float *color, float sizeFactor);
-        void drawCam(float lineWidth, float *color, float sizeFactor);
+        void drawPose(float lineWidth, float *color, float sizeFactor, Eigen::Matrix4f pose);
 
         std::thread runThread;
         bool ownThread;
@@ -66,7 +64,7 @@ namespace SlamTester {
 //	KeyFrameDisplay* currentCam;
         Eigen::Matrix4f camToWorld, imuToWorld;
 //	std::vector<KeyFrameDisplay*> keyframes;
-        std::vector<Vec3f, Eigen::aligned_allocator<Vec3f>> allFramePoses;
+        std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> allFramePoses;
 //	std::map<int, KeyFrameDisplay*> keyframesByKFID;
 //	std::vector<GraphConnection,Eigen::aligned_allocator<GraphConnection>> connections;
 
@@ -76,7 +74,6 @@ namespace SlamTester {
         bool setting_render_showCurrentCamera;
         bool setting_render_showCurrentImu;
         bool setting_render_showTrajectory;
-        bool setting_render_showFullTrajectory;
         bool setting_render_showActiveConstraints;
         bool setting_render_showAllConstraints;
         bool setting_render_display3D;
@@ -98,6 +95,11 @@ namespace SlamTester {
         std::deque<float> lastNimuMsgMs;
         std::deque<float> lastNrgbMsgMs;
         std::deque<float> lastNprocessImgMs;
+
+        // colors
+        float red[3]{1.0, 0, 0};
+        float green[3]{0, 1.0, 0};
+        float blue[3]{0, 0, 1.0};
     };
 
 
