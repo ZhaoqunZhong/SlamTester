@@ -17,8 +17,11 @@
 /// Choose dataset & algorithm.
 /*#include "TumRs_Pangolin_Example.h"
 std::unique_ptr<SlamTester::AlgorithmInterface> algorithm_inter = std::make_unique<SlamTester::PangolinFakeAlgorithm>();*/
-#include "modify-vins-mono/TumRs_VinsMono.h"
+/*#include "modify-vins-mono/TumRs_VinsMono.h"
 std::string vins_config = "/Users/zhongzhaoqun/Downloads/dataset-seq1/vins/vins_config.yaml";
+std::unique_ptr<SlamTester::AlgorithmInterface> algorithm_inter = std::make_unique<VinsMonoAlgorithm>(vins_config);*/
+#include "modify-vins-mono/Euroc_VinsMono.h"
+std::string vins_config = "/Users/zhongzhaoqun/Downloads/euroc_config.yaml";
 std::unique_ptr<SlamTester::AlgorithmInterface> algorithm_inter = std::make_unique<VinsMonoAlgorithm>(vins_config);
 
 
@@ -212,17 +215,19 @@ int main(int argc, char **argv) {
     google::InitGoogleLogging(argv[0]);
     google::InstallFailureSignalHandler();
 
-    // Set up inputs.
-    std::string ros_bag = "/Users/zhongzhaoqun/Downloads/dataset-seq1.bag";
+    /// Set up inputs.
+    /*    auto input_inter = std::make_shared<SlamTester::TumRsPangolinInput>(cam_config, ros_bag);
+    algorithm_inter->input_interfaces.push_back(input_inter);*/
+/*    std::string ros_bag = "/Users/zhongzhaoqun/Downloads/dataset-seq1.bag";
     std::string cam_config = "/Users/zhongzhaoqun/Downloads/dataset-seq1/dso/cam0/camera-copy.txt";
     std::string imu_config = "/Users/zhongzhaoqun/Downloads/dataset-seq1/dso/imu_config.yaml";
     std::string ci_extrinsic = "/Users/zhongzhaoqun/Downloads/dataset-seq1/dso/camchain.yaml";
     auto input_inter = std::make_shared<TumRsVinsMono>(
-            cam_config, imu_config, ci_extrinsic,ros_bag);
-/*    auto input_inter = std::make_shared<SlamTester::TumRsPangolinInput>(cam_config, ros_bag);
-    algorithm_inter->input_interfaces.push_back(input_inter);*/
-
-    // Set up outputs.
+            cam_config, imu_config, ci_extrinsic,ros_bag);*/
+    std::string ros_bag = "/Users/zhongzhaoqun/Downloads/V2_03_difficult.bag";
+    auto input_inter = std::make_shared<EurocVinsMono>(
+            vins_config, ros_bag);
+    /// Set up outputs.
     auto pango_viewer = std::make_shared<SlamTester::PangolinViewer>(input_inter->orig_w,
          input_inter->orig_h, input_inter->inner_w, input_inter->inner_h, false);
     algorithm_inter->output_interfaces.push_back(pango_viewer);
@@ -230,7 +235,7 @@ int main(int argc, char **argv) {
     algorithm_inter->start();
 
     // Set up data threads.
-    std::thread tumRSdataThread([&]() {
+    std::thread dataThread([&]() {
         pango_viewer->blockWaitForStart();
 
         ob_slam::rosbag::Bag play_bag;
@@ -315,8 +320,8 @@ int main(int argc, char **argv) {
     pango_viewer->run();// Make macOS happy.
     // std::thread pango_thread([&]{pango_viewer->run();});
 
-    tumRSdataThread.join();
-    LOG(INFO) << "tumRSdataThread joined.";
+    dataThread.join();
+    LOG(INFO) << "dataThread joined.";
 
     algorithm_inter->stop();
     LOG(INFO) << "algorithm stopped.";

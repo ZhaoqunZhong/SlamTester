@@ -19,7 +19,7 @@ add_executable(${PROJECT_NAME}
         PangolinViewer.cpp
 #        SlamInterface.cpp
 
-        TumRs_Pangolin_Example.cpp
+#        TumRs_Pangolin_Example.cpp
 #        modify-vins-mono/TumRs_VinsMono.cpp
         )
 

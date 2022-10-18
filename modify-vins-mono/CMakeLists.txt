@@ -19,28 +19,21 @@ add_subdirectory(camera_model)
 add_subdirectory(feature_tracker)
 add_subdirectory(vins_estimator)
 
-add_library( # Sets the name of the library.
-        ${PROJECT_NAME}
-        # Sets the library as a shared library.
-        SHARED
-        # Provides a relative path to your source file(s).
-#        android/algorithm_interface.cpp
-#        android/ob_system.cpp
-        TumRs_VinsMono.cpp
+add_library(  ${PROJECT_NAME} SHARED
         ../SlamInterface.cpp
+
+#        TumRs_VinsMono.cpp
+        Euroc_VinsMono.cpp
         )
 
 target_link_libraries(${PROJECT_NAME} # Specifies the target library.
-#        platform-lib
         camera_model
         feature_tracker
         vins_estimator
-#        ${jniLibs_DIR}/libqspower-1.4.so
+
         yaml-cpp
         )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-#        ${CMAKE_SOURCE_DIR}/lib-includes
-#        ${CMAKE_SOURCE_DIR}/platform
-#        ${CMAKE_SOURCE_DIR}/platform/rosbag/include
+
         )
