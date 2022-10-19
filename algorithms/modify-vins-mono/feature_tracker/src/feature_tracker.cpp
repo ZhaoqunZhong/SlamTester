@@ -159,7 +159,6 @@ void FeatureTracker::readImage(const cv::Mat _img, double _cur_time)
                 LOG(WARNING) << "wrong size " << endl;
             // cv::imshow("goodFeaturesToTrack",forw_img);
             // cv::waitKey(20);
-            LOG(WARNING) << "";
             // cv::imwrite("/Users/zhongzhaoqun/Downloads/dataset-seq1/vins/goodFeaturesToTrack.png", forw_img);
             cv::goodFeaturesToTrack(forw_img, n_pts, MAX_CNT - forw_pts.size(), 0.01, MIN_DIST, mask);
         }

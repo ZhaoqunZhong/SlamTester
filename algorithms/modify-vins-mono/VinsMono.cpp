@@ -2,82 +2,18 @@
 // Created by 仲钊群 on 2022/10/9.
 //
 
-#include "TumRs_VinsMono.h"
-#include "yaml-cpp/yaml.h"
+#include "VinsMono.h"
 #include "glog/logging.h"
 
-
-TumRsVinsMono::TumRsVinsMono(std::string &cam_config, std::string &config, std::string &ros_bag) {
-    data_bag = ros_bag;
-    /*
-    YAML::Node imuf = YAML::LoadFile(imu_config);
-    if (imuf.IsScalar()) {
-        LOG(ERROR) << "Failed to read imu config file.";
-        exit(1);
-    } else {
-        LOG(INFO) << "Read imu config file.";
-        imu_na = imuf["accelerometer_noise_density"].as<double>();
-        imu_ra = imuf["accelerometer_random_walk"].as<double>();
-        imu_ng = imuf["gyroscope_noise_density"].as<double>();
-        imu_rg = imuf["gyroscope_random_walk"].as<double>();
-        LOG(INFO) << "imu_na: " << imu_na;
-        LOG(INFO) << "imu_ra: " << imu_ra;
-        LOG(INFO) << "imu_ng: " << imu_ng;
-        LOG(INFO) << "imu_rg: " << imu_rg;
-        imu_topic = imuf["rostopic"].as<std::string>();
-        LOG(INFO) << "imu ros topic: " << imu_topic;
-    }
-
-    YAML::Node cif = YAML::LoadFile(ci_extrinsic);
-    if (cif.IsScalar()) {
-        LOG(ERROR) << "Failed to read cam_imu calibration file.";
-        exit(1);
-    } else {
-        LOG(INFO) << "Read cam_imu calibration file.";
-        std::string cam = "cam0";// gs cam
-        monoImg_topic = cif[cam]["rostopic"].as<std::string>();
-        LOG(INFO) << "mono image rostopic: " << monoImg_topic;
-        camToImu.row(0) = Eigen::RowVector4d(cif[cam]["T_cam_imu"][0].as<std::vector<double>>().data());
-        camToImu.row(1) = Eigen::RowVector4d(cif[cam]["T_cam_imu"][1].as<std::vector<double>>().data());
-        camToImu.row(2) = Eigen::RowVector4d(cif[cam]["T_cam_imu"][2].as<std::vector<double>>().data());
-        camToImu.row(3) = Eigen::RowVector4d(cif[cam]["T_cam_imu"][3].as<std::vector<double>>().data());
-        LOG(INFO) << "cam to imu extrinsic: \n" << camToImu;
-        // LOG(INFO) << "imu to cam extrinsic: \n" << camToImu.inverse();
-        timeshift_cam = cif[cam]["timeshift_cam_imu"].as<double>();
-        LOG(INFO) << "timeshift cam to imu: " << timeshift_cam;
-        orig_w = inner_w = cif[cam]["resolution"][0].as<double>();
-        orig_h = inner_h = cif[cam]["resolution"][1].as<double>();
-        LOG(INFO) << "orig_w, orig_h: " << orig_w << "," << orig_h;
-        LOG(INFO) << "inner_w, inner_h: " << inner_w << "," << inner_h;
-    }
-    */
-    YAML::Node configf = YAML::LoadFile(config);
-    if (configf.IsScalar()) {
-        LOG(ERROR) << "Failed to read config file.";
-        exit(1);
-    } else {
-        LOG(INFO) << "Read config file.";
-        imu_topic = configf["imu_topic"].as<std::string>();
-        monoImg_topic = configf["image_topic"].as<std::string>();
-        // orig_w = inner_w = configf["image_width"].as<double>();
-        // orig_h = inner_h = configf["image_height"].as<double>();
-    }
-
-    bag_topics = {monoImg_topic, imu_topic, acc_topic, gyr_topic};
-
-    getUndistorterFromFile(cam_config, "", "");
-    LOG(INFO) << "orig_w, orig_h: " << orig_w << "," << orig_h;
-    LOG(INFO) << "inner_w, inner_h: " << inner_w << "," << inner_h;
-}
-
-VinsMonoAlgorithm::VinsMonoAlgorithm(std::string &vins_config) : bStart_backend(true), process_exited(false) {
+VinsMonoAlgorithm::VinsMonoAlgorithm(std::string &config) :
+    bStart_backend(true), process_exited(false) {
     FLAGS_logtostdout = true;
     FLAGS_colorlogtostdout = true;
 
-    estimator.config_path_ = vins_config;
-    vins_estimator::readParameters(vins_config);
-    feature_tracker::readParameters(vins_config);
-    trackerData[0].readIntrinsicParameter(vins_config);
+    estimator.config_path_ = config;
+    vins_estimator::readParameters(config);
+    feature_tracker::readParameters(config);
+    trackerData[0].readIntrinsicParameter(config);
     estimator.setParameter();
 }
 
@@ -154,7 +90,7 @@ void VinsMonoAlgorithm::feedMonoImg(double ts, cv::Mat mono) {
                 double x = un_pts[j].x;
                 double y = un_pts[j].y;
                 double z = 1;
-                feature_points->points.push_back(Vector3d(x, y, z));
+                feature_points->points.emplace_back(x, y, z);
                 feature_points->id_of_point.push_back(p_id * feature_tracker::NUM_OF_CAM + i);
                 feature_points->u_of_point.push_back(cur_pts[j].x);
                 feature_points->v_of_point.push_back(cur_pts[j].y);

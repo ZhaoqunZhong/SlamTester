@@ -13,17 +13,18 @@
 #include "MessageType/geometry_msgs/Vector3Stamped.h"
 #include "cv_bridge_simple.h"
 
+#include "DataSets.h"
+#include "algorithms/Pangolin_Algo_Example.h"
+#include "algorithms/modify-vins-mono/VinsMono.h"
 
-/// Choose dataset & algorithm.
-/*#include "TumRs_Pangolin_Example.h"
-std::unique_ptr<SlamTester::AlgorithmInterface> algorithm_inter = std::make_unique<SlamTester::PangolinFakeAlgorithm>();*/
-#include "modify-vins-mono/TumRs_VinsMono.h"
-std::string vins_config = "/Users/zhongzhaoqun/Downloads/dataset-seq1/vins/vins_config.yaml";
-std::unique_ptr<SlamTester::AlgorithmInterface> algorithm_inter = std::make_unique<VinsMonoAlgorithm>(vins_config);
-/*#include "modify-vins-mono/Euroc_VinsMono.h"
-std::string vins_config = "/Users/zhongzhaoqun/Downloads/euroc_config.yaml";
-std::unique_ptr<SlamTester::AlgorithmInterface> algorithm_inter = std::make_unique<VinsMonoAlgorithm>(vins_config);*/
-
+DEFINE_string(algorithm, "", "Choose one of the following algorithms {example_undistort, vins_mono}");
+DEFINE_string(dataset, "", "Choose one of the following datasets {euroc, tum_rs}");
+DEFINE_string(algoConfig, "", "Path to algorithm config file.");
+DEFINE_string(camConfig, "", "Path to internal camera config file.");
+DEFINE_string(imuConfig, "", "Path to imu noise parameters file.");
+DEFINE_string(ciExtrinsic, "", "Path to camera to imu extrinsic file.");
+DEFINE_string(dataBag, "", "Path to rosbag file.");
+DEFINE_bool(rs_cam, false, "Choose rolling shutter camera data if available.");
 
 // Finite automata to sync acc and gyr.
 enum Input {acc,gyr} cur_input;
@@ -54,7 +55,7 @@ struct imu_msg {
 };
 std::vector<gyr_msg> gyro_cache_;
 std::vector<acc_msg> acc_cache_;
-void constructImuInterpolateAcc() {
+void constructImuInterpolateAcc(SlamTester::AlgorithmInterface *algorithmInterface) {
     switch (cur_state) {
         case WAIT_FOR_MSG:
             if (cur_input == acc) {
@@ -86,7 +87,7 @@ void constructImuInterpolateAcc() {
                     imu.acc_part = {imu.ts, acc_cache_.front().ax * (1-factor) + acc_cache_.back().ax *factor,
                                     acc_cache_.front().ay * (1-factor) + acc_cache_.back().ay *factor,
                                     acc_cache_.front().az * (1-factor) + acc_cache_.back().az *factor};
-                    algorithm_inter->feedImu(imu.ts, Eigen::Vector3d{imu.acc_part.ax, imu.acc_part.ay, imu.acc_part.az},
+                    algorithmInterface->feedImu(imu.ts, Eigen::Vector3d{imu.acc_part.ax, imu.acc_part.ay, imu.acc_part.az},
                                              Eigen::Vector3d{imu.gyro_part.rx, imu.gyro_part.ry, imu.gyro_part.rz});
                     cur_state = ACC_GYR_ACC;
                 }
@@ -109,7 +110,7 @@ void constructImuInterpolateAcc() {
                             imu.acc_part = {imu.ts, acc_cache_.front().ax * (1-factor) + acc_cache_.back().ax *factor,
                                             acc_cache_.front().ay * (1-factor) + acc_cache_.back().ay *factor,
                                             acc_cache_.front().az * (1-factor) + acc_cache_.back().az *factor};
-                            algorithm_inter->feedImu(imu.ts, Eigen::Vector3d{imu.acc_part.ax, imu.acc_part.ay, imu.acc_part.az},
+                            algorithmInterface->feedImu(imu.ts, Eigen::Vector3d{imu.acc_part.ax, imu.acc_part.ay, imu.acc_part.az},
                                                      Eigen::Vector3d{imu.gyro_part.rx, imu.gyro_part.ry, imu.gyro_part.rz});
                         } else {
                             break;
@@ -126,7 +127,7 @@ void constructImuInterpolateAcc() {
                         imu.acc_part = {imu.ts, acc_cache_.front().ax * (1-factor) + acc_cache_.back().ax *factor,
                                         acc_cache_.front().ay * (1-factor) + acc_cache_.back().ay *factor,
                                         acc_cache_.front().az * (1-factor) + acc_cache_.back().az *factor};
-                        algorithm_inter->feedImu(imu.ts, Eigen::Vector3d{imu.acc_part.ax, imu.acc_part.ay, imu.acc_part.az},
+                        algorithmInterface->feedImu(imu.ts, Eigen::Vector3d{imu.acc_part.ax, imu.acc_part.ay, imu.acc_part.az},
                                                  Eigen::Vector3d{imu.gyro_part.rx, imu.gyro_part.ry, imu.gyro_part.rz});
                     }
                     gyro_cache_.erase(gyro_cache_.begin(), gyro_cache_.begin() + gyro_cache_.size() - 1);
@@ -150,7 +151,7 @@ void constructImuInterpolateAcc() {
                     imu.acc_part = {imu.ts, acc_cache_.front().ax * (1-factor) + acc_cache_.back().ax *factor,
                                     acc_cache_.front().ay * (1-factor) + acc_cache_.back().ay *factor,
                                     acc_cache_.front().az * (1-factor) + acc_cache_.back().az *factor};
-                    algorithm_inter->feedImu(imu.ts, Eigen::Vector3d{imu.acc_part.ax, imu.acc_part.ay, imu.acc_part.az},
+                    algorithmInterface->feedImu(imu.ts, Eigen::Vector3d{imu.acc_part.ax, imu.acc_part.ay, imu.acc_part.az},
                                              Eigen::Vector3d{imu.gyro_part.rx, imu.gyro_part.ry, imu.gyro_part.rz});
                     gyro_cache_.erase(gyro_cache_.begin());
                 }
@@ -168,7 +169,7 @@ void constructImuInterpolateAcc() {
                     imu.acc_part = {imu.ts, acc_cache_.front().ax * (1-factor) + acc_cache_.back().ax *factor,
                                     acc_cache_.front().ay * (1-factor) + acc_cache_.back().ay *factor,
                                     acc_cache_.front().az * (1-factor) + acc_cache_.back().az *factor};
-                    algorithm_inter->feedImu(imu.ts, Eigen::Vector3d{imu.acc_part.ax, imu.acc_part.ay, imu.acc_part.az},
+                    algorithmInterface->feedImu(imu.ts, Eigen::Vector3d{imu.acc_part.ax, imu.acc_part.ay, imu.acc_part.az},
                                              Eigen::Vector3d{imu.gyro_part.rx, imu.gyro_part.ry, imu.gyro_part.rz});
                     gyro_cache_.erase(gyro_cache_.begin());
                 } else if (gyro_cache_.back().ts >= acc_cache_.back().ts) {
@@ -188,7 +189,7 @@ void constructImuInterpolateAcc() {
                     imu.acc_part = {imu.ts, acc_cache_[i-1].ax * (1-factor) + acc_cache_[i].ax *factor,
                                     acc_cache_[i-1].ay * (1-factor) + acc_cache_[i].ay *factor,
                                     acc_cache_[i-1].az * (1-factor) + acc_cache_[i].az *factor};
-                    algorithm_inter->feedImu(imu.ts, Eigen::Vector3d{imu.acc_part.ax, imu.acc_part.ay, imu.acc_part.az},
+                    algorithmInterface->feedImu(imu.ts, Eigen::Vector3d{imu.acc_part.ax, imu.acc_part.ay, imu.acc_part.az},
                                              Eigen::Vector3d{imu.gyro_part.rx, imu.gyro_part.ry, imu.gyro_part.rz});
                     gyro_cache_.erase(gyro_cache_.begin());
                     acc_cache_.erase(acc_cache_.begin(), acc_cache_.begin() + i-1);
@@ -197,36 +198,55 @@ void constructImuInterpolateAcc() {
             break;
     }
 }
-void feedAcc(double ts, Eigen::Vector3d acc_msg) {
+void feedAcc(double ts, Eigen::Vector3d acc_msg, SlamTester::AlgorithmInterface *algorithmInterface) {
     acc_cache_.emplace_back(ts, acc_msg.x(), acc_msg.y(), acc_msg.z());
     cur_input = acc;
-    constructImuInterpolateAcc();
+    constructImuInterpolateAcc(algorithmInterface);
 }
-void feedGyr(double ts, Eigen::Vector3d gyr_msg) {
+void feedGyr(double ts, Eigen::Vector3d gyr_msg, SlamTester::AlgorithmInterface *algorithmInterface) {
     gyro_cache_.emplace_back(ts, gyr_msg.x(), gyr_msg.y(), gyr_msg.z());
     cur_input = gyr;
-    constructImuInterpolateAcc();
+    constructImuInterpolateAcc(algorithmInterface);
 }
 
 
-int main(int argc, char **argv) {
+int main(int argc, char *argv[]) {
+    gflags::ParseCommandLineFlags(&argc, &argv, true);
     FLAGS_logtostdout = true;
     FLAGS_colorlogtostdout = true;
     google::InitGoogleLogging(argv[0]);
     google::InstallFailureSignalHandler();
 
-    /// Set up inputs.
-    // auto input_inter = std::make_shared<SlamTester::TumRsPangolinInput>(cam_config, ros_bag);
-    std::string ros_bag = "/Users/zhongzhaoqun/Downloads/dataset-seq1.bag";
-    std::string cam_config = "/Users/zhongzhaoqun/Downloads/dataset-seq1/dso/cam0/camera-copy.txt";
-    std::string imu_config = "/Users/zhongzhaoqun/Downloads/dataset-seq1/dso/imu_config.yaml";
-    std::string ci_extrinsic = "/Users/zhongzhaoqun/Downloads/dataset-seq1/dso/camchain.yaml";
-    auto input_inter = std::make_shared<TumRsVinsMono>(
-            cam_config, vins_config,ros_bag);
-/*    std::string ros_bag = "/Users/zhongzhaoqun/Downloads/V2_03_difficult.bag";
-    auto input_inter = std::make_shared<EurocVinsMono>(
-            vins_config, ros_bag);*/
+    if (FLAGS_algorithm.empty() || FLAGS_dataset.empty() || FLAGS_dataBag.empty() || FLAGS_camConfig.empty()) {
+        LOG(ERROR) << "Please provide the command line args, use --help to get a clue.";
+        exit(0);
+    }
+
+    /// Set up algorithm
+    std::unique_ptr<SlamTester::AlgorithmInterface> algorithm_inter;
+    if (FLAGS_algorithm == "vins_mono")
+        algorithm_inter = std::make_unique<VinsMonoAlgorithm>(FLAGS_algoConfig);
+    else if (FLAGS_algorithm == "example_undistort")
+        algorithm_inter = std::make_unique<SlamTester::PangolinFakeAlgorithm>();
+    else {
+        LOG(ERROR) << "Unknown algorithm.";
+        exit(0);
+    }
+
+    /// Set up input Dataset.
+    std::shared_ptr<SlamTester::InputInterface> input_inter;
+    if (FLAGS_dataset == "tum_rs") {
+        input_inter = std::make_shared<SlamTester::TumRsDataset>(FLAGS_camConfig,
+             FLAGS_imuConfig, FLAGS_ciExtrinsic, FLAGS_dataBag, FLAGS_rs_cam);
+    } else if (FLAGS_dataset == "euroc") {
+        input_inter = std::make_shared<SlamTester::EurocDataset>(FLAGS_camConfig,
+              FLAGS_imuConfig, FLAGS_ciExtrinsic, FLAGS_dataBag);
+    } else {
+        LOG(ERROR) << "Unknown dataset.";
+        exit(0);
+    }
     algorithm_inter->input_interfaces.push_back(input_inter);
+
     /// Set up outputs.
     auto pango_viewer = std::make_shared<SlamTester::PangolinViewer>(input_inter->orig_w,
          input_inter->orig_h, input_inter->inner_w, input_inter->inner_h, false);
@@ -304,13 +324,13 @@ int main(int argc, char **argv) {
                 ob_slam::geometry_msgs::Vector3Stamped::ConstPtr acc_ptr =
                         iter->instantiate<ob_slam::geometry_msgs::Vector3Stamped>();
                 feedAcc(acc_ptr->header.stamp.toSec(),
-                                        Eigen::Vector3d(acc_ptr->vector.x, acc_ptr->vector.y, acc_ptr->vector.z));
+                                        Eigen::Vector3d(acc_ptr->vector.x, acc_ptr->vector.y, acc_ptr->vector.z), algorithm_inter.get());
             }
             else if (!imu_synced && input_inter->gyr_topic == iter->getTopic()) {
                 ob_slam::geometry_msgs::Vector3Stamped::ConstPtr gyr_ptr =
                         iter->instantiate<ob_slam::geometry_msgs::Vector3Stamped>();
                 feedGyr(gyr_ptr->header.stamp.toSec(),
-                                        Eigen::Vector3d(gyr_ptr->vector.x, gyr_ptr->vector.y, gyr_ptr->vector.z));
+                                        Eigen::Vector3d(gyr_ptr->vector.x, gyr_ptr->vector.y, gyr_ptr->vector.z), algorithm_inter.get());
             }
         }
 

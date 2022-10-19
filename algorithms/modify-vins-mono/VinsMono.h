@@ -1,13 +1,13 @@
 //
-// Created by 仲钊群 on 2022/10/18.
+// Created by 仲钊群 on 2022/10/9.
 //
 
-#ifndef SLAMTESTER_EUROC_VINSMONO_H
-#define SLAMTESTER_EUROC_VINSMONO_H
+#ifndef SLAMTESTER_VINSMONO_H
+#define SLAMTESTER_VINSMONO_H
 
-#include "../SlamInterface.h"
+#include "../../SlamInterface.h"
 
-#include <stdio.h>
+#include <cstdio>
 #include <queue>
 #include <map>
 #include <thread>
@@ -39,17 +39,10 @@ struct IMG_MSG {
 };
 typedef std::shared_ptr <IMG_MSG const > ImgConstPtr;
 
-class EurocVinsMono : public SlamTester::InputInterface {
-public:
-    EurocVinsMono(std::string &config, std::string &ros_bag);
-
-    ~EurocVinsMono() override {}
-
-};
 
 class VinsMonoAlgorithm : public SlamTester::AlgorithmInterface {
 public:
-    VinsMonoAlgorithm(std::string &vins_config);
+    VinsMonoAlgorithm(std::string &config);
 
     ~VinsMonoAlgorithm() override;
 
@@ -104,7 +97,7 @@ private:
     Eigen::Vector3d tmp_V;
     Eigen::Vector3d tmp_Ba;
     Eigen::Vector3d tmp_Bg;
-    bool first_image = 0;
+    bool first_image = false;
     double last_imu_t = 0;
     // std::ofstream ofs_pose;
     // std::vector<Eigen::Vector3d> vPath_to_draw;
@@ -130,4 +123,6 @@ private:
     Eigen::Vector3d acc_0;
     Eigen::Vector3d gyr_0;
 };
-#endif //SLAMTESTER_EUROC_VINSMONO_H
+
+
+#endif //SLAMTESTER_VINSMONO_H

@@ -45,4 +45,4 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 #        ${CMAKE_SOURCE_DIR}/lib-includes
 #        ${CMAKE_SOURCE_DIR}/platform
         ${OpenCV_INCLUDE_DIRS}
-        ${CMAKE_CURRENT_SOURCE_DIR}/../camera_model/include)
+        ../camera_model/include)

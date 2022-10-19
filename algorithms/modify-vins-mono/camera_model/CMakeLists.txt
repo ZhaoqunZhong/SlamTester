@@ -79,6 +79,6 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 target_include_directories(${PROJECT_NAME} PUBLIC
 #        ${CMAKE_SOURCE_DIR}/lib-includes
 #        ${CMAKE_SOURCE_DIR}/platform
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        include
         ${OpenCV_INCLUDE_DIRS}
         )

@@ -38,7 +38,9 @@ namespace SlamTester {
     class InputInterface {
     public:
 
-        InputInterface() {}
+        InputInterface(std::string &cam_conf, std::string &imu_conf, std::string &ci_ext,
+                       std::string &bag) : cam_config(cam_conf), imu_config(imu_conf),
+                       ci_extrinsic(ci_ext), data_bag(bag) {}
         virtual ~InputInterface() {}
 
         // Paras that read from config files.
@@ -57,20 +59,21 @@ namespace SlamTester {
         std::string acc_topic = "/acc0";
         std::string gyr_topic = "/gyr0";
         std::vector<std::string> bag_topics;
+        std::string cam_config;
+        std::string imu_config;
+        std::string ci_extrinsic;
         std::string ground_truth;
 
         // unDistortion
         uint inner_w, inner_h;
         cv::Mat remapX, remapY;
         cv::Matx33d inner_cam_k;
-        virtual void undistortImg(cv::Mat in, cv::Mat &out);
+        void undistortImg(cv::Mat in, cv::Mat &out);
 
     protected:
-        virtual void getUndistorterFromFile(std::string configFilename, std::string gammaFilename, std::string vignetteFilename);
+        void getUndistorterFromFile(std::string configFilename, std::string gammaFilename, std::string vignetteFilename);
 
     };
-
-
 
 
     // A certain algorithm should contain both input and output interfaces.

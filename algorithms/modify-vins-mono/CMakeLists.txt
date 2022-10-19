@@ -13,17 +13,14 @@ find_package(OpenCV REQUIRED)
 find_package(Ceres REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Boost 1.70 REQUIRED COMPONENTS filesystem)
-find_package(yaml-cpp REQUIRED)
+#find_package(yaml-cpp REQUIRED)
 
 add_subdirectory(camera_model)
 add_subdirectory(feature_tracker)
 add_subdirectory(vins_estimator)
 
 add_library(  ${PROJECT_NAME} SHARED
-        ../SlamInterface.cpp
-
-        TumRs_VinsMono.cpp
-#        Euroc_VinsMono.cpp
+        VinsMono.cpp
         )
 
 target_link_libraries(${PROJECT_NAME} # Specifies the target library.
@@ -31,7 +28,7 @@ target_link_libraries(${PROJECT_NAME} # Specifies the target library.
         feature_tracker
         vins_estimator
 
-        yaml-cpp
+#        yaml-cpp
         )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
