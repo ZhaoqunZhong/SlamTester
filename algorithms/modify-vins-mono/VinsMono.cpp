@@ -31,14 +31,6 @@ VinsMonoAlgorithm::~VinsMonoAlgorithm() {
 }
 #if 1
 void VinsMonoAlgorithm::feedMonoImg(double ts, cv::Mat mono) {
-    for (auto &oi: output_interfaces) {
-        oi->publishVideoImg(mono);
-    }
-    // Downsample image for Vins
-/*    cv::Mat mono_ds;
-    input_interfaces[0]->undistortImg(mono, mono_ds);
-    mono = mono_ds;*/
-
     if (mono.channels() != 1) {
         LOG(ERROR) << "feedMonoImg input not mono.";
         return;

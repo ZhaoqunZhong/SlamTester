@@ -25,6 +25,7 @@ DEFINE_string(imuConfig, "", "Path to imu noise parameters file.");
 DEFINE_string(ciExtrinsic, "", "Path to camera to imu extrinsic file.");
 DEFINE_string(dataBag, "", "Path to rosbag file.");
 DEFINE_bool(rs_cam, false, "Choose rolling shutter camera data if available.");
+DEFINE_bool(resizeAndUndistort, false, "Resize the rgb resolution and undistort before feeding to algorithm.");
 
 // Finite automata to sync acc and gyr.
 enum Input {acc,gyr} cur_input;
@@ -300,10 +301,18 @@ int main(int argc, char *argv[]) {
                     CvBridgeSimple cvb;
                     cv::Mat mat = cvb.ConvertToCvMat(image_ptr);
                     // cv::imwrite("/Users/zhongzhaoqun/Downloads/dataset-seq1/vins/ConvertToCvMat.png", mat);
+                    for (auto &oi: algorithm_inter->output_interfaces) {
+                        oi->publishVideoImg(mat);
+                    }
+                    algorithm_inter->input_interfaces[0]->undistortImg(mat, mat);
                     algorithm_inter->feedMonoImg(image_ptr->header.stamp.toSec(), mat);
                 } else if (iter->isType<ob_slam::sensor_msgs::CompressedImage>()) { //compressed image
                     ob_slam::sensor_msgs::CompressedImage::ConstPtr image_ptr = iter->instantiate<ob_slam::sensor_msgs::CompressedImage>();
                     cv::Mat mat = cv::imdecode(image_ptr->data, cv::IMREAD_GRAYSCALE);
+                    for (auto &oi: algorithm_inter->output_interfaces) {
+                        oi->publishVideoImg(mat);
+                    }
+                    algorithm_inter->input_interfaces[0]->undistortImg(mat, mat);
                     algorithm_inter->feedMonoImg(image_ptr->header.stamp.toSec(), mat);
                 } else {
                     LOG(ERROR) << "Unknown mono image type in ros bag!";

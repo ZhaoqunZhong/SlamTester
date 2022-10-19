@@ -6,6 +6,8 @@
 #include "glog/logging.h"
 #include <fstream>
 
+DECLARE_bool(resizeAndUndistort);
+
 namespace SlamTester {
 
     void InputInterface::getUndistorterFromFile(std::string configFilename, std::string gammaFilename,
@@ -156,6 +158,8 @@ namespace SlamTester {
     }
 
     void InputInterface::undistortImg(cv::Mat in, cv::Mat &out) {
+        if (!FLAGS_resizeAndUndistort)
+            return;
         if (distort_model == RadTan || distort_model == PinHole ||
             distort_model == EquiDistant || distort_model == KannalaBrandt) {
             cv::remap(in, out, remapX, remapY, cv::INTER_LINEAR);
