@@ -22,8 +22,8 @@ add_subdirectory(vins_estimator)
 add_library(  ${PROJECT_NAME} SHARED
         ../SlamInterface.cpp
 
-#        TumRs_VinsMono.cpp
-        Euroc_VinsMono.cpp
+        TumRs_VinsMono.cpp
+#        Euroc_VinsMono.cpp
         )
 
 target_link_libraries(${PROJECT_NAME} # Specifies the target library.

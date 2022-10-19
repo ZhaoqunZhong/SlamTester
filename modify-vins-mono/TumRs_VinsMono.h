@@ -41,7 +41,7 @@ typedef std::shared_ptr <IMG_MSG const > ImgConstPtr;
 
 class TumRsVinsMono : public SlamTester::InputInterface {
 public:
-    TumRsVinsMono(std::string &cam_config, std::string &imu_config, std::string &ci_extrinsic, std::string &ros_bag);
+    TumRsVinsMono(std::string &cam_config, std::string &vins_config, std::string &ros_bag);
 
     ~TumRsVinsMono() override {}
 

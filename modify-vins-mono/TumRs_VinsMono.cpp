@@ -7,9 +7,9 @@
 #include "glog/logging.h"
 
 
-TumRsVinsMono::TumRsVinsMono(std::string &cam_config, std::string &imu_config, std::string &ci_extrinsic, std::string &ros_bag) {
+TumRsVinsMono::TumRsVinsMono(std::string &cam_config, std::string &config, std::string &ros_bag) {
     data_bag = ros_bag;
-
+    /*
     YAML::Node imuf = YAML::LoadFile(imu_config);
     if (imuf.IsScalar()) {
         LOG(ERROR) << "Failed to read imu config file.";
@@ -27,7 +27,6 @@ TumRsVinsMono::TumRsVinsMono(std::string &cam_config, std::string &imu_config, s
         imu_topic = imuf["rostopic"].as<std::string>();
         LOG(INFO) << "imu ros topic: " << imu_topic;
     }
-
 
     YAML::Node cif = YAML::LoadFile(ci_extrinsic);
     if (cif.IsScalar()) {
@@ -51,10 +50,24 @@ TumRsVinsMono::TumRsVinsMono(std::string &cam_config, std::string &imu_config, s
         LOG(INFO) << "orig_w, orig_h: " << orig_w << "," << orig_h;
         LOG(INFO) << "inner_w, inner_h: " << inner_w << "," << inner_h;
     }
+    */
+    YAML::Node configf = YAML::LoadFile(config);
+    if (configf.IsScalar()) {
+        LOG(ERROR) << "Failed to read config file.";
+        exit(1);
+    } else {
+        LOG(INFO) << "Read config file.";
+        imu_topic = configf["imu_topic"].as<std::string>();
+        monoImg_topic = configf["image_topic"].as<std::string>();
+        // orig_w = inner_w = configf["image_width"].as<double>();
+        // orig_h = inner_h = configf["image_height"].as<double>();
+    }
 
     bag_topics = {monoImg_topic, imu_topic, acc_topic, gyr_topic};
 
-    // getUndistorterFromFile(cam_config, "", "");
+    getUndistorterFromFile(cam_config, "", "");
+    LOG(INFO) << "orig_w, orig_h: " << orig_w << "," << orig_h;
+    LOG(INFO) << "inner_w, inner_h: " << inner_w << "," << inner_h;
 }
 
 VinsMonoAlgorithm::VinsMonoAlgorithm(std::string &vins_config) : bStart_backend(true), process_exited(false) {
@@ -82,6 +95,14 @@ VinsMonoAlgorithm::~VinsMonoAlgorithm() {
 }
 #if 1
 void VinsMonoAlgorithm::feedMonoImg(double ts, cv::Mat mono) {
+    for (auto &oi: output_interfaces) {
+        oi->publishVideoImg(mono);
+    }
+    // Downsample image for Vins
+/*    cv::Mat mono_ds;
+    input_interfaces[0]->undistortImg(mono, mono_ds);
+    mono = mono_ds;*/
+
     if (mono.channels() != 1) {
         LOG(ERROR) << "feedMonoImg input not mono.";
         return;
@@ -168,7 +189,6 @@ void VinsMonoAlgorithm::feedMonoImg(double ts, cv::Mat mono) {
                            cv::Scalar(255 * (1 - len), 0, 255 * len), 2);
             }
             for (auto &oi: sys->output_interfaces) {
-                oi->publishVideoImg(mat);
                 oi->publishProcessImg(show_img);
                 // cv::imwrite("/Users/zhongzhaoqun/Downloads/dataset-seq1/vins/publishProcessImg.png", show_img);
             }
@@ -181,6 +201,11 @@ void VinsMonoAlgorithm::feedMonoImg(double ts, cv::Mat mono) {
 
 #else
 void VinsMonoAlgorithm::feedMonoImg(double ts, cv::Mat mono) {
+    // Downsample image for Vins
+    cv::Mat mono_ds;
+    input_interfaces[0]->undistortImg(mono, mono);
+    // mono = mono_ds;
+
     if (mono.channels() != 1) {
         LOG(ERROR) << "feedMonoImg input not mono.";
         return;

@@ -80,7 +80,7 @@ namespace SlamTester {
         bool setting_render_displayVideo;
         bool setting_render_displayProcess;
         bool setting_render_fullResetRequested;
-        bool control_started;
+        bool control_started = false;
         float setting_playback_rate;
 
         // timings

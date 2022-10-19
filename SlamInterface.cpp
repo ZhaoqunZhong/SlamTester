@@ -152,6 +152,7 @@ namespace SlamTester {
             return;
         }
 
+        LOG(INFO) << "Inner camera K: \n" << inner_cam_k;
     }
 
     void InputInterface::undistortImg(cv::Mat in, cv::Mat &out) {
