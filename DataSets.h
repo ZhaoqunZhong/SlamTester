@@ -20,7 +20,8 @@ namespace SlamTester {
     public:
         EurocDataset(std::string &camConf, std::string &imuConf, std::string &ciExt, std::string &bag, std::string &gt);
         ~EurocDataset() override = default;
-
+    private:
+        void loadGroundTruth(std::string &gt) override;
     };
 }
 

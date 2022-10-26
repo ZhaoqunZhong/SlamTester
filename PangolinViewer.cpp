@@ -136,7 +136,7 @@ namespace SlamTester {
 
                 //pangolin::glDrawColouredCube();
                 if (setting_render_showCurrentImu) {
-                    drawPose(2, red, 0.4, imuToWorld.cast<float>());
+                    drawPose(2, green, 0.4, imuToWorld.cast<float>());
                 }
                 if (setting_render_showCurrentCamera) {
                     drawPose(2, blue, 0.4, camToWorld.cast<float>());
@@ -147,11 +147,10 @@ namespace SlamTester {
                     glBegin(GL_LINE_STRIP);
                     for(unsigned int i=0; i < imuPoses.size(); i++)
                     {
-                        // glVertex3f((float)imuPoses[i][0],
-                        //            (float)imuPoses[i][1],
-                        //            (float)imuPoses[i][2]);
-                        auto imu_tran = imuPoses[i].cast<float>().block<3,1>(0,0);
-                        glVertex3f(imu_tran.x(), imu_tran.y(), imu_tran.z());
+                        Eigen::Vector4d imu_tran(0,0,0,1);
+                        imu_tran.block<3,1>(0,0) = imuPoses[i].block<3,1>(0,0);
+                        auto aligned_tran = (gtToTraj * imu_tran).cast<float>();
+                        glVertex3f(aligned_tran.x(), aligned_tran.y(), aligned_tran.z());
                     }
                     glEnd();
                 }
@@ -170,20 +169,9 @@ namespace SlamTester {
                     glColor3f(red[0], red[1], red[2]);
                     glLineWidth(3);
                     glBegin(GL_LINE_STRIP);
-                    if (gt_alignment_changed) {
-                        gt_trans_aligned.clear();
-                        for (unsigned int i = 0; i < gt_poses.size(); ++i) {
-                            Eigen::Vector4d tran(0,0,0,1);
-                            tran.block<3,1>(0,0) = gt_poses[i].block<3,1>(0,0);
-                            Eigen::Vector3d tran_align = (trajToGt * tran).block<3,1>(0,0);
-                            gt_trans_aligned.push_back(tran_align);
-                            glVertex3f(tran_align.x(), tran_align.y(), tran_align.z());
-                        }
-                    } else {
-                        for (unsigned int i = 0; i < gt_trans_aligned.size(); ++i) {
-                            auto gt_tran = gt_trans_aligned[i].cast<float>().block<3,1>(0,0);
-                            glVertex3f(gt_tran.x(), gt_tran.y(), gt_tran.z());
-                        }
+                    for (unsigned int i = 0; i < gt_poses.size(); ++i) {
+                        auto tran = gt_poses[i].block<3,1>(0,0);
+                        glVertex3f(tran.x(), tran.y(), tran.z());
                     }
                     glEnd();
                 }
@@ -275,7 +263,7 @@ namespace SlamTester {
             pangolin::FinishFrame();
 
             /// Align trajectory with ground truth.
-            struct timeval time_now;
+/*            struct timeval time_now;
             gettimeofday(&time_now, nullptr);
             if ((time_now.tv_sec - last_align_time.tv_sec) * 1.0f + (time_now.tv_usec - last_align_time.tv_usec) / 1000000.f > 1) {
                 auto &traj_poses = imuPoses;
@@ -285,10 +273,16 @@ namespace SlamTester {
                     traj_times = cam_times_s;
                 }
                 std::thread align_thread(&PangolinViewer::alignTrajToGt, this, 0, 0.02, std::ref(traj_poses),
-                            std::ref(traj_times), std::ref(gt_poses), std::ref(gt_times_s), std::ref(trajToGt));
+                            std::ref(traj_times), std::ref(gt_poses), std::ref(gt_times_s), std::ref(gtToTraj));
                 align_thread.detach();
+            }*/
+            // Debug traj alignment
+            struct timeval time_now;
+            gettimeofday(&time_now, nullptr);
+            if ((time_now.tv_sec - last_align_time.tv_sec) * 1.0f + (time_now.tv_usec - last_align_time.tv_usec) / 1000000.f > 1) {
+                alignTrajToGt(0, 0.02, imuPoses, imu_times_s, gt_poses, gt_times_s, gtToTraj);
+                last_align_time = time_now;
             }
-
 
             if (needReset) reset_internal();
         }
@@ -562,17 +556,16 @@ namespace SlamTester {
         AlignUtils::perform_association(t_offset_traj, max_t_diff,
                                         traj_time_copy, gt_time_copy, traj_copy, gt_pose_copy);
 
-        Eigen::Matrix3d R_trajToGt;
-        Eigen::Vector3d t_trajToGt;
+        Eigen::Matrix3d R_gtToTraj;
+        Eigen::Vector3d t_gtToTraj;
         double s_trajToGt;
 
-        AlignTrajectory::align_trajectory(traj_copy, gt_pose_copy, R_trajToGt, t_trajToGt, s_trajToGt, "se3");
+        AlignTrajectory::align_trajectory(traj_copy, gt_pose_copy, R_gtToTraj, t_gtToTraj, s_trajToGt, "se3");
 
         model3DMutex.lock();
         transform.setIdentity();
-        transform.block<3,3>(0,0) = R_trajToGt;
-        transform.block<3,1>(0,3) = t_trajToGt;
-        gt_alignment_changed = true;
+        transform.block<3,3>(0,0) = R_gtToTraj;
+        transform.block<3,1>(0,3) = t_gtToTraj;
         model3DMutex.unlock();
     }
 

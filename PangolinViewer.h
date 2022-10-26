@@ -66,11 +66,10 @@ namespace SlamTester {
         Eigen::Matrix4d camToWorld, imuToWorld;
         std::vector<Eigen::Matrix<double, 7, 1>> camPoses, imuPoses; //x, y, z, qx, qy, qz, qw
         std::vector<double> cam_times_s, imu_times_s;
-        Eigen::Matrix4d trajToGt;
+        Eigen::Matrix4d gtToTraj = Eigen::Matrix4d::Identity();
         std::vector<Eigen::Matrix<double, 7, 1>> gt_poses; //x, y, z, qx, qy, qz, qw
-        std::vector<Eigen::Vector3d> gt_trans_aligned;
+        std::vector<Eigen::Vector3d> traj_trans_aligned;
         std::vector<double> gt_times_s;
-        bool gt_alignment_changed;
         void alignTrajToGt(double t_offset_traj, double max_t_diff, std::vector<Eigen::Matrix<double, 7, 1>> &traj,
                            std::vector<double> &traj_times, std::vector<Eigen::Matrix<double, 7, 1>> &gt,
                            std::vector<double> &gt_times, Eigen::Matrix4d &transform);
