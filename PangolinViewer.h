@@ -17,7 +17,9 @@ namespace SlamTester {
     class PangolinViewer : public OutputInterface {
     public:
 
-        PangolinViewer(int video_w, int video_h, int algo_w, int algo_h, bool startRunThread = true);
+        PangolinViewer(int video_w, int video_h, int algo_w, int algo_h,
+                       std::vector<Eigen::Matrix<double, 7, 1>> &gt, std::vector<double> &gt_time,
+                       bool startRunThread = true);
 
         ~PangolinViewer() override;
 
@@ -61,10 +63,19 @@ namespace SlamTester {
 
         // 3D model rendering
         std::mutex model3DMutex;
+        Eigen::Matrix4d camToWorld, imuToWorld;
+        std::vector<Eigen::Matrix<double, 7, 1>> camPoses, imuPoses; //x, y, z, qx, qy, qz, qw
+        std::vector<double> cam_times_s, imu_times_s;
+        Eigen::Matrix4d trajToGt;
+        std::vector<Eigen::Matrix<double, 7, 1>> gt_poses; //x, y, z, qx, qy, qz, qw
+        std::vector<Eigen::Vector3d> gt_trans_aligned;
+        std::vector<double> gt_times_s;
+        bool gt_alignment_changed;
+        void alignTrajToGt(double t_offset_traj, double max_t_diff, std::vector<Eigen::Matrix<double, 7, 1>> &traj,
+                           std::vector<double> &traj_times, std::vector<Eigen::Matrix<double, 7, 1>> &gt,
+                           std::vector<double> &gt_times, Eigen::Matrix4d &transform);
 //	KeyFrameDisplay* currentCam;
-        Eigen::Matrix4f camToWorld, imuToWorld;
 //	std::vector<KeyFrameDisplay*> keyframes;
-        std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> allFramePoses;
 //	std::map<int, KeyFrameDisplay*> keyframesByKFID;
 //	std::vector<GraphConnection,Eigen::aligned_allocator<GraphConnection>> connections;
 
@@ -73,7 +84,9 @@ namespace SlamTester {
         bool setting_render_showKFCameras;
         bool setting_render_showCurrentCamera;
         bool setting_render_showCurrentImu;
-        bool setting_render_showTrajectory;
+        bool setting_render_showImuTrajectory;
+        bool setting_render_showCamTrajectory;
+        bool setting_render_showGroundTruth;
         bool setting_render_showActiveConstraints;
         bool setting_render_showAllConstraints;
         bool setting_render_display3D;

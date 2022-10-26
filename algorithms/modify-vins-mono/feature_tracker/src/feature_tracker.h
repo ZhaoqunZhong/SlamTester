@@ -64,4 +64,6 @@ class FeatureTracker
     double prev_time;
 
     static int n_id;
+
+    float bi_direc_opticalFlow_pixel_error_square = 1;
 };

@@ -39,8 +39,8 @@ namespace SlamTester {
     public:
 
         InputInterface(std::string &cam_conf, std::string &imu_conf, std::string &ci_ext,
-                       std::string &bag) : cam_config(cam_conf), imu_config(imu_conf),
-                       ci_extrinsic(ci_ext), data_bag(bag) {}
+                       std::string &bag, std::string &gt) : cam_config(cam_conf), imu_config(imu_conf),
+                       ci_extrinsic(ci_ext), data_bag(bag), ground_truth(gt) {}
         virtual ~InputInterface() {}
 
         // Paras that read from config files.
@@ -63,6 +63,8 @@ namespace SlamTester {
         std::string imu_config;
         std::string ci_extrinsic;
         std::string ground_truth;
+        std::vector<Eigen::Matrix<double, 7, 1>> gt_poses; //x, y, z, qx, qy, qz, qw
+        std::vector<double> gt_times_s;
 
         // unDistortion
         uint inner_w, inner_h;
@@ -72,7 +74,7 @@ namespace SlamTester {
 
     protected:
         void getUndistorterFromFile(std::string configFilename, std::string gammaFilename, std::string vignetteFilename);
-
+        virtual void loadGroundTruth(std::string &gt_file);
     };
 
 

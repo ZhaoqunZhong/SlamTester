@@ -9,15 +9,16 @@
 namespace SlamTester {
     class TumRsDataset : public InputInterface {
     public:
-        TumRsDataset(std::string &camConf, std::string &imuConf, std::string &ciExt, std::string &bag,
+        TumRsDataset(std::string &camConf, std::string &imuConf, std::string &ciExt, std::string &bag, std::string &gt,
                      bool rs);
         ~TumRsDataset() override = default;
-
+    private:
+        void loadGroundTruth(std::string &gt) override;
     };
 
     class EurocDataset : public InputInterface {
     public:
-        EurocDataset(std::string &camConf, std::string &imuConf, std::string &ciExt, std::string &bag);
+        EurocDataset(std::string &camConf, std::string &imuConf, std::string &ciExt, std::string &bag, std::string &gt);
         ~EurocDataset() override = default;
 
     };

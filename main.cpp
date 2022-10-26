@@ -24,6 +24,7 @@ DEFINE_string(camConfig, "", "Path to internal camera config file.");
 DEFINE_string(imuConfig, "", "Path to imu noise parameters file.");
 DEFINE_string(ciExtrinsic, "", "Path to camera to imu extrinsic file.");
 DEFINE_string(dataBag, "", "Path to rosbag file.");
+DEFINE_string(groundTruth, "", "Path to ground truth file.");
 DEFINE_bool(rs_cam, false, "Choose rolling shutter camera data if available.");
 DEFINE_bool(resizeAndUndistort, false, "Resize the rgb resolution and undistort before feeding to algorithm.");
 
@@ -238,10 +239,10 @@ int main(int argc, char *argv[]) {
     std::shared_ptr<SlamTester::InputInterface> input_inter;
     if (FLAGS_dataset == "tum_rs") {
         input_inter = std::make_shared<SlamTester::TumRsDataset>(FLAGS_camConfig,
-             FLAGS_imuConfig, FLAGS_ciExtrinsic, FLAGS_dataBag, FLAGS_rs_cam);
+             FLAGS_imuConfig, FLAGS_ciExtrinsic, FLAGS_dataBag, FLAGS_groundTruth, FLAGS_rs_cam);
     } else if (FLAGS_dataset == "euroc") {
         input_inter = std::make_shared<SlamTester::EurocDataset>(FLAGS_camConfig,
-              FLAGS_imuConfig, FLAGS_ciExtrinsic, FLAGS_dataBag);
+              FLAGS_imuConfig, FLAGS_ciExtrinsic, FLAGS_dataBag, FLAGS_groundTruth);
     } else {
         LOG(ERROR) << "Unknown dataset.";
         exit(0);
@@ -250,7 +251,8 @@ int main(int argc, char *argv[]) {
 
     /// Set up outputs.
     auto pango_viewer = std::make_shared<SlamTester::PangolinViewer>(input_inter->orig_w,
-         input_inter->orig_h, input_inter->inner_w, input_inter->inner_h, false);
+         input_inter->orig_h, input_inter->inner_w, input_inter->inner_h,
+         input_inter->gt_poses,input_inter->gt_times_s, false);
     algorithm_inter->output_interfaces.push_back(pango_viewer);
 
     algorithm_inter->start();
@@ -291,7 +293,7 @@ int main(int argc, char *argv[]) {
             else if (input_inter->monoImg_topic == iter->getTopic() &&
                     sSinceStart - bag_time_since_start > 0.033/pango_viewer->getPlayRate()) {// Skip rgb msg if lagging more than 33ms.
                 // LOG(WARNING) << "Skipped msg topic: " << iter->getTopic();
-                LOG(WARNING) << "Skipped rgb msg at bag time: " << std::to_string(iter->getTime().toSec());
+                LOG(WARNING) << "[SKIPPED ROS MSG]Skipped rgb msg at bag time: " << std::to_string(iter->getTime().toSec());
                 continue;
             }
 

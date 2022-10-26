@@ -122,7 +122,8 @@ void VinsMonoAlgorithm::feedMonoImg(double ts, cv::Mat mono) {
             }
         };
         uint64_t image_ts = ts * 1e9;
-        std::thread t(f, std::ref(image_ts), mono.clone(), this);
+        // std::thread t(f, std::ref(image_ts), mono.clone(), this);
+        std::thread t(f, image_ts, mono, this);
         t.detach();
     }
 }

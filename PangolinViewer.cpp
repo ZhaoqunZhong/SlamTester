@@ -3,19 +3,24 @@
 */
 
 
-
 #include <sys/time.h>
 #include "PangolinViewer.h"
 #include "Eigen/Core"
 #include "glog/logging.h"
+#include "alignment/AlignUtils.h"
+#include "alignment/AlignTrajectory.h"
 
 namespace SlamTester {
 
-    PangolinViewer::PangolinViewer(int video_w, int video_h, int algo_w, int algo_h, bool startRunThread) {
+    PangolinViewer::PangolinViewer(int video_w, int video_h, int algo_w, int algo_h,
+                                   std::vector<Eigen::Matrix<double, 7, 1>> &gt, std::vector<double> &gt_time,
+                                   bool startRunThread) {
         this->video_w = video_w;
         this->video_h = video_h;
         this->algo_w = algo_w;
         this->algo_h = algo_h;
+        gt_poses = gt;
+        gt_times_s = gt_time;
         running = true;
         ownThread = startRunThread;
 
@@ -35,7 +40,7 @@ namespace SlamTester {
 
         {
 //		currentCam = new KeyFrameDisplay();
-            imuToWorld = camToWorld = Eigen::Matrix4f::Identity();
+            imuToWorld = camToWorld = Eigen::Matrix4d::Identity();
         }
 
         needReset = false;
@@ -98,28 +103,26 @@ namespace SlamTester {
         pangolin::Var<bool> startButton("ui.Start", false, false);
 //	pangolin::Var<int> settings_pointCloudMode("ui.PC_mode",1,1,4,false);
         pangolin::Var<float> settings_playRate("ui.PlayBackRate",1,0.25,4,false);
-
         pangolin::Var<bool> settings_showKFCameras("ui.KFCam", false, true);
         pangolin::Var<bool> settings_showCurrentCamera("ui.CurrCam", false, true);
         pangolin::Var<bool> settings_showCurrentImu("ui.CurrImu", true, true);
-        pangolin::Var<bool> settings_showTrajectory("ui.Trajectory", true, true);
+        pangolin::Var<bool> settings_showCamTrajectory("ui.camPoses", false, true);
+        pangolin::Var<bool> settings_showImuTrajectory("ui.imuPoses", true, true);
+        pangolin::Var<bool> settings_showGroundTruth("ui.GroundTruth", true, true);
         pangolin::Var<bool> settings_showActiveConstraints("ui.ActiveConst", true, true);
         pangolin::Var<bool> settings_showAllConstraints("ui.AllConst", false, true);
-
-
         pangolin::Var<bool> settings_show3D("ui.show3D", true, true);
         pangolin::Var<bool> settings_showLiveProcess("ui.showProcess", true, true);
         pangolin::Var<bool> settings_showLiveVideo("ui.showVideo", true, true);
-
         pangolin::Var<bool> resetButton("ui.Reset", false, false);
-
-
         pangolin::Var<double> display_imuFps("ui.ImuPoseFps", 0, 0, 0, false);
         pangolin::Var<double> display_camFps("ui.CamPoseFps", 0, 0, 0, false);
         pangolin::Var<double> display_rgbFps("ui.rgbMsgFps", 0, 0, 0, false);
         pangolin::Var<double> display_imuMsgFps("ui.imuMsgFps", 0, 0, 0, false);
         pangolin::Var<double> display_processImgFps("ui.processImgFps", 0, 0, 0, false);
 
+        struct timeval last_align_time;
+        gettimeofday(&last_align_time, nullptr);
         // Default hooks for exiting (Esc) and fullscreen (tab).
         while (!pangolin::ShouldQuit() && running) {
             // Clear entire screen
@@ -128,23 +131,59 @@ namespace SlamTester {
             if (setting_render_display3D) {
                 // Activate efficiently by object
                 Visualization3D_display.Activate(Visualization3D_camera);
+                // lock
                 std::unique_lock<std::mutex> lk3d(model3DMutex);
+
                 //pangolin::glDrawColouredCube();
                 if (setting_render_showCurrentImu) {
-                    drawPose(2, red, 0.4, imuToWorld);
-                    allFramePoses.push_back(imuToWorld.block<3,1>(0,3));
+                    drawPose(2, red, 0.4, imuToWorld.cast<float>());
                 }
-                if (setting_render_showCurrentCamera)
-                    drawPose(2, blue, 0.4, camToWorld);
-                if (setting_render_showTrajectory) {
+                if (setting_render_showCurrentCamera) {
+                    drawPose(2, blue, 0.4, camToWorld.cast<float>());
+                }
+                if (setting_render_showImuTrajectory) {
                     glColor3f(green[0], green[1], green[2]);
                     glLineWidth(3);
                     glBegin(GL_LINE_STRIP);
-                    for(unsigned int i=0;i<allFramePoses.size();i++)
+                    for(unsigned int i=0; i < imuPoses.size(); i++)
                     {
-                        glVertex3f((float)allFramePoses[i][0],
-                                   (float)allFramePoses[i][1],
-                                   (float)allFramePoses[i][2]);
+                        // glVertex3f((float)imuPoses[i][0],
+                        //            (float)imuPoses[i][1],
+                        //            (float)imuPoses[i][2]);
+                        auto imu_tran = imuPoses[i].cast<float>().block<3,1>(0,0);
+                        glVertex3f(imu_tran.x(), imu_tran.y(), imu_tran.z());
+                    }
+                    glEnd();
+                }
+                if (setting_render_showCamTrajectory) {
+                    glColor3f(blue[0], blue[1], blue[2]);
+                    glLineWidth(3);
+                    glBegin(GL_LINE_STRIP);
+                    for(unsigned int i=0; i < camPoses.size(); i++)
+                    {
+                        auto cam_tran = camPoses[i].cast<float>().block<3,1>(0,0);
+                        glVertex3f(cam_tran.x(), cam_tran.y(), cam_tran.z());
+                    }
+                    glEnd();
+                }
+                if (setting_render_showGroundTruth) {
+                    glColor3f(red[0], red[1], red[2]);
+                    glLineWidth(3);
+                    glBegin(GL_LINE_STRIP);
+                    if (gt_alignment_changed) {
+                        gt_trans_aligned.clear();
+                        for (unsigned int i = 0; i < gt_poses.size(); ++i) {
+                            Eigen::Vector4d tran(0,0,0,1);
+                            tran.block<3,1>(0,0) = gt_poses[i].block<3,1>(0,0);
+                            Eigen::Vector3d tran_align = (trajToGt * tran).block<3,1>(0,0);
+                            gt_trans_aligned.push_back(tran_align);
+                            glVertex3f(tran_align.x(), tran_align.y(), tran_align.z());
+                        }
+                    } else {
+                        for (unsigned int i = 0; i < gt_trans_aligned.size(); ++i) {
+                            auto gt_tran = gt_trans_aligned[i].cast<float>().block<3,1>(0,0);
+                            glVertex3f(gt_tran.x(), gt_tran.y(), gt_tran.z());
+                        }
                     }
                     glEnd();
                 }
@@ -216,7 +255,9 @@ namespace SlamTester {
             setting_render_showCurrentCamera = settings_showCurrentCamera.Get();
             setting_render_showCurrentImu = settings_showCurrentImu.Get();
             setting_render_showKFCameras = settings_showKFCameras.Get();
-            setting_render_showTrajectory = settings_showTrajectory.Get();
+            setting_render_showImuTrajectory = settings_showImuTrajectory.Get();
+            setting_render_showCamTrajectory = settings_showCamTrajectory.Get();
+            setting_render_showGroundTruth = settings_showGroundTruth.Get();
             setting_render_display3D = settings_show3D.Get();
             setting_render_displayProcess = settings_showLiveProcess.Get();
             setting_render_displayVideo = settings_showLiveVideo.Get();
@@ -232,6 +273,21 @@ namespace SlamTester {
 
             // Swap frames and Process Events
             pangolin::FinishFrame();
+
+            /// Align trajectory with ground truth.
+            struct timeval time_now;
+            gettimeofday(&time_now, nullptr);
+            if ((time_now.tv_sec - last_align_time.tv_sec) * 1.0f + (time_now.tv_usec - last_align_time.tv_usec) / 1000000.f > 1) {
+                auto &traj_poses = imuPoses;
+                auto &traj_times = imu_times_s;
+                if (!setting_render_showCurrentImu) {
+                    traj_poses = camPoses;
+                    traj_times = cam_times_s;
+                }
+                std::thread align_thread(&PangolinViewer::alignTrajToGt, this, 0, 0.02, std::ref(traj_poses),
+                            std::ref(traj_times), std::ref(gt_poses), std::ref(gt_times_s), std::ref(trajToGt));
+                align_thread.detach();
+            }
 
 
             if (needReset) reset_internal();
@@ -264,13 +320,14 @@ namespace SlamTester {
     }
 
     void PangolinViewer::reset_internal() {
-/*	model3DMutex.lock();
-	for(size_t i=0; i<keyframes.size();i++) delete keyframes[i];
-	keyframes.clear();
-	allFramePoses.clear();
-	keyframesByKFID.clear();
-	connections.clear();
-	model3DMutex.unlock();*/
+        model3DMutex.lock();
+        // for(size_t i=0; i<keyframes.size();i++) delete keyframes[i];
+        // keyframes.clear();
+        imuPoses.clear();
+        camPoses.clear();
+        // keyframesByKFID.clear();
+        // connections.clear();
+        model3DMutex.unlock();
 
 
         openImagesMutex.lock();
@@ -303,9 +360,11 @@ namespace SlamTester {
         if (lastNcamPoseMs.size() > 10) lastNcamPoseMs.pop_front();
         last_camPose_t = time_now;
 
-//    currentCam->setFromF(frame, HCalib);
-//    allFramePoses.push_back(frame->camToWorld.translation().cast<float>());
-        camToWorld = cam_pose.cast<float>();
+        camToWorld = cam_pose;
+        Eigen::Matrix<double,7,1> cam_pose7;
+        cam_pose7.block<3,1>(0,0) = camToWorld.block<3,1>(0,3);
+        cam_pose7.block<4,1>(3,0) = AlignUtils::rot_2_quat(camToWorld.block<3,3>(0,0));
+        camPoses.push_back(cam_pose7);
     }
 
     void PangolinViewer::publishImuPose(Eigen::Matrix4d &imu_pose) {
@@ -320,7 +379,11 @@ namespace SlamTester {
         if (lastNimuPoseMs.size() > 30) lastNimuPoseMs.pop_front();
         last_imuPose_t = time_now;
 
-        imuToWorld = imu_pose.cast<float>();
+        imuToWorld = imu_pose;
+        Eigen::Matrix<double,7,1> imu_pose7;
+        imu_pose7.block<3,1>(0,0) = imuToWorld.block<3,1>(0,3);
+        imu_pose7.block<4,1>(3,0) = AlignUtils::rot_2_quat(imuToWorld.block<3,3>(0,0));
+        imuPoses.push_back(imu_pose7);
     }
 
     void PangolinViewer::publishVideoImg(cv::Mat video_img) {
@@ -485,6 +548,33 @@ namespace SlamTester {
         glPopMatrix();
     }
 
+    void PangolinViewer::alignTrajToGt(double t_offset_traj, double max_t_diff, std::vector<Eigen::Matrix<double, 7, 1>> &traj,
+                                       std::vector<double> &traj_times, std::vector<Eigen::Matrix<double, 7, 1>> &gt,
+                                       std::vector<double> &gt_times, Eigen::Matrix4d &transform) {
+
+        model3DMutex.lock();
+        auto traj_copy = traj;
+        auto traj_time_copy = traj_times;
+        auto gt_pose_copy = gt;
+        auto gt_time_copy = gt_times;
+        model3DMutex.unlock();
+
+        AlignUtils::perform_association(t_offset_traj, max_t_diff,
+                                        traj_time_copy, gt_time_copy, traj_copy, gt_pose_copy);
+
+        Eigen::Matrix3d R_trajToGt;
+        Eigen::Vector3d t_trajToGt;
+        double s_trajToGt;
+
+        AlignTrajectory::align_trajectory(traj_copy, gt_pose_copy, R_trajToGt, t_trajToGt, s_trajToGt, "se3");
+
+        model3DMutex.lock();
+        transform.setIdentity();
+        transform.block<3,3>(0,0) = R_trajToGt;
+        transform.block<3,1>(0,3) = t_trajToGt;
+        gt_alignment_changed = true;
+        model3DMutex.unlock();
+    }
 
 
 }

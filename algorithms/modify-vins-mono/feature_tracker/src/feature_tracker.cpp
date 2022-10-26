@@ -33,6 +33,7 @@ void reduceVector(vector<int> &v, vector<uchar> status)
 FeatureTracker::FeatureTracker()
 {
     // cv::namedWindow("goodFeaturesToTrack");
+    LOG(INFO) << "bi_direc_opticalFlow_pixel_error_square: " << bi_direc_opticalFlow_pixel_error_square;
 }
 
 void FeatureTracker::setMask()
@@ -115,16 +116,32 @@ void FeatureTracker::readImage(const cv::Mat _img, double _cur_time)
 
     forw_pts.clear();
 
-    if (cur_pts.size() > 0)
-    {
+    if (cur_pts.size() > 0) {
         TicToc t_o;
-        vector<uchar> status;
+        vector<uchar> status, backflow_status;
         vector<float> err;
-        cv::calcOpticalFlowPyrLK(cur_img, forw_img, cur_pts, forw_pts, status, err, cv::Size(21, 21), 3);
-
-        for (int i = 0; i < int(forw_pts.size()); i++)
+        vector<cv::Point2f> backflow_pts;
+        cv::calcOpticalFlowPyrLK(cur_img, forw_img, cur_pts, forw_pts, status, err,
+                                 cv::Size(21, 21), 3);
+        cv::calcOpticalFlowPyrLK(forw_img, cur_img, forw_pts, backflow_pts, backflow_status,
+                                 err, cv::Size(21, 21), 3);
+        int forw_cnt = 0, back_cnt = 0;
+        for (int i = 0; i < int(forw_pts.size()); i++) {
             if (status[i] && !inBorder(forw_pts[i]))
                 status[i] = 0;
+            if (status[i])
+                forw_cnt++;
+            if (status[i] && backflow_status[i]) {
+                if ((backflow_pts[i].x - cur_pts[i].x) * (backflow_pts[i].x - cur_pts[i].x)
+                    + (backflow_pts[i].y - cur_pts[i].y) * (backflow_pts[i].y - cur_pts[i].y)
+                    > bi_direc_opticalFlow_pixel_error_square) // pixel error
+                    status[i] = 0;
+                else
+                    back_cnt++;
+            }
+        }
+        // LOG(WARNING) << "DEBUG forw_cnt " << forw_cnt << " back_cnt " << back_cnt;
+        // LOG(WARNING) << "DEBUG backward optical flow reject " << 100.0*(forw_cnt - back_cnt) / forw_cnt << "%";
         // reduceVector(prev_pts, status);
         reduceVector(cur_pts, status);
         reduceVector(forw_pts, status);
@@ -139,7 +156,7 @@ void FeatureTracker::readImage(const cv::Mat _img, double _cur_time)
 
     if (PUB_THIS_FRAME)
     {
-        rejectWithF();
+        // rejectWithF(); // Replace with bi-directional optical flow.
         //LOG(INFO) << "set mask begins";
         // TicToc t_m;
         // setMask();

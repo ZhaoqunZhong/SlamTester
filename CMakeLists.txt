@@ -19,6 +19,8 @@ add_executable(${PROJECT_NAME}
         PangolinViewer.cpp
         SlamInterface.cpp
         DataSets.cpp
+        alignment/AlignUtils.cpp
+        alignment/AlignTrajectory.cpp
 
         algorithms/Pangolin_Algo_Example.cpp
         )

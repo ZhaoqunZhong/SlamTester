@@ -198,7 +198,7 @@ bool LinearAlignment(map<double, ImageFrame> &all_image_frame, Vector3d &g, Vect
 
 bool VisualIMUAlignment(map<double, ImageFrame> &all_image_frame, Vector3d* Bgs, Vector3d &g, VectorXd &x)
 {
-    // solveGyroscopeBias(all_image_frame, Bgs);
+    solveGyroscopeBias(all_image_frame, Bgs);
 
     if(LinearAlignment(all_image_frame, g, x))
         return true;
