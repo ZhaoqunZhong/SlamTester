@@ -13,6 +13,7 @@ find_package(yaml-cpp REQUIRED)
 
 add_subdirectory(rosbag)
 add_subdirectory(algorithms/modify-vins-mono)
+add_subdirectory(algorithms/dso)
 
 add_executable(${PROJECT_NAME}
         main.cpp
@@ -34,6 +35,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         yaml-cpp
 
         modify_vins_mono
+        dso
         )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
