@@ -19,8 +19,8 @@ namespace SlamTester {
         OutputInterface() {}
         virtual ~OutputInterface() {}
         
-        virtual void publishCamPose(Eigen::Matrix4d & cam_pose) {}
-        virtual void publishImuPose(Eigen::Matrix4d & imu_pose) {}
+        virtual void publishCamPose(Eigen::Matrix4d & cam_pose, double ts) {}
+        virtual void publishImuPose(Eigen::Matrix4d & imu_pose, double ts) {}
 
         virtual void publishVideoImg(cv::Mat video_img) {}
         virtual void publishProcessImg(cv::Mat process_img) {}

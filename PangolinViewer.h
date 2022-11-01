@@ -32,8 +32,8 @@ namespace SlamTester {
         float getPlayRate();
 
         // ==================== Slam results interface ======================
-        void publishCamPose(Eigen::Matrix4d &cam_pose) override;
-        void publishImuPose(Eigen::Matrix4d &imu_pose) override;
+        void publishCamPose(Eigen::Matrix4d &cam_pose, double ts) override;
+        void publishImuPose(Eigen::Matrix4d &imu_pose, double ts) override;
 
 
         void publishVideoImg(cv::Mat video_img) override;

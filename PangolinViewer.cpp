@@ -342,7 +342,7 @@ namespace SlamTester {
         return setting_playback_rate;
     }
 
-    void PangolinViewer::publishCamPose(Eigen::Matrix4d &cam_pose) {
+    void PangolinViewer::publishCamPose(Eigen::Matrix4d &cam_pose, double ts) {
         if (!setting_render_display3D) return;
         if (!setting_render_showCurrentCamera) return;
 
@@ -359,9 +359,10 @@ namespace SlamTester {
         cam_pose7.block<3,1>(0,0) = camToWorld.block<3,1>(0,3);
         cam_pose7.block<4,1>(3,0) = AlignUtils::rot_2_quat(camToWorld.block<3,3>(0,0));
         camPoses.push_back(cam_pose7);
+        cam_times_s.push_back(ts);
     }
 
-    void PangolinViewer::publishImuPose(Eigen::Matrix4d &imu_pose) {
+    void PangolinViewer::publishImuPose(Eigen::Matrix4d &imu_pose, double ts) {
         if (!setting_render_display3D) return;
         if (!setting_render_showCurrentImu) return;
 
@@ -378,6 +379,7 @@ namespace SlamTester {
         imu_pose7.block<3,1>(0,0) = imuToWorld.block<3,1>(0,3);
         imu_pose7.block<4,1>(3,0) = AlignUtils::rot_2_quat(imuToWorld.block<3,3>(0,0));
         imuPoses.push_back(imu_pose7);
+        imu_times_s.push_back(ts);
     }
 
     void PangolinViewer::publishVideoImg(cv::Mat video_img) {
@@ -569,7 +571,7 @@ namespace SlamTester {
 
         model3DMutex.lock();
         transform.setIdentity();
-        transform.block<3,3>(0,0) = R_gtToTraj;
+        transform.block<3,3>(0,0) = R_gtToTraj * s_trajToGt;
         transform.block<3,1>(0,3) = t_gtToTraj;
         model3DMutex.unlock();
     }

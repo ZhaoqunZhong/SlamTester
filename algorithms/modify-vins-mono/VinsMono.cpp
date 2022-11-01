@@ -329,7 +329,7 @@ void VinsMonoAlgorithm::process() {
                 world_to_imu.block<3,1>(0,3) = estimator.Ps[vins_estimator::WINDOW_SIZE];
                 Eigen::Matrix4d imu_to_world = world_to_imu.inverse();
                 for (auto &oi: output_interfaces) {
-                    oi->publishImuPose(imu_to_world);
+                    oi->publishImuPose(imu_to_world, img_msg->header);
                 }
             }
         }
