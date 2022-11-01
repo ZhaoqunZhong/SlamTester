@@ -15,7 +15,7 @@
 
 #include "DataSets.h"
 #include "algorithms/Pangolin_Algo_Example.h"
-#include "algorithms/modify-vins-mono/VinsMono.h"
+#include "algorithms/vins_mono/VinsAlgorithm.h"
 #include "algorithms/dso/DsoAlgorithm.h"
 
 DEFINE_string(algorithm, "", "Choose one of the following algorithms {example_undistort, vins_mono, dso}");
@@ -244,7 +244,7 @@ int main(int argc, char *argv[]) {
     /// Set up algorithm
     std::unique_ptr<SlamTester::AlgorithmInterface> algorithm_inter;
     if (FLAGS_algorithm == "vins_mono")
-        algorithm_inter = std::make_unique<VinsMonoAlgorithm>(FLAGS_algoConfig);
+        algorithm_inter = std::make_unique<VinsAlgorithm>(FLAGS_algoConfig);
     else if (FLAGS_algorithm == "example_undistort")
         algorithm_inter = std::make_unique<SlamTester::PangolinFakeAlgorithm>();
     else if (FLAGS_algorithm == "dso") {

@@ -12,7 +12,7 @@ find_package(yaml-cpp REQUIRED)
 #message("==> OpenCV_LIBS: ${OpenCV_LIBS}")
 
 add_subdirectory(rosbag)
-add_subdirectory(algorithms/modify-vins-mono)
+add_subdirectory(algorithms/vins_mono)
 add_subdirectory(algorithms/dso)
 
 add_executable(${PROJECT_NAME}
@@ -22,7 +22,6 @@ add_executable(${PROJECT_NAME}
         DataSets.cpp
         alignment/AlignUtils.cpp
         alignment/AlignTrajectory.cpp
-
         algorithms/Pangolin_Algo_Example.cpp
         )
 
@@ -34,7 +33,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         glog::glog
         yaml-cpp
 
-        modify_vins_mono
+        vins_mono
         dso
         )
 

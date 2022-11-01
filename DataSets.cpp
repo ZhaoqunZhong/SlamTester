@@ -70,6 +70,7 @@ namespace SlamTester {
             camToImu.row(3) = Eigen::RowVector4d(cif["cam0"]["T_cam_imu"][3].as<std::vector<double>>().data());
         }
         LOG(INFO) << "cam to imu extrinsic: \n" << camToImu;
+        LOG(INFO) << "imu to cam extrinsic: \n" << camToImu.inverse();
         bag_topics = {monoImg_topic, imu_topic};
 /*        LOG(INFO) << "Used rosbag topics: ";
         for (auto &topic : bag_topics) {

@@ -6,7 +6,7 @@
 #define SLAMTESTER_SLAMINTERFACE_H
 
 #include "opencv2/opencv.hpp"
-#include "Eigen/Core"
+#include "Eigen/Eigen"
 #include "glog/logging.h"
 
 DECLARE_bool(resizeAndUndistort);
@@ -51,7 +51,7 @@ namespace SlamTester {
         std::vector<double> cam_distort;
         DistortModel distort_model;
         double imu_na, imu_ra, imu_ng, imu_rg;
-        Eigen::Matrix4d camToImu;
+        Eigen::Matrix4d camToImu = Eigen::Matrix4d::Identity();
         double timeshift_cam;
         uint orig_w, orig_h;
 

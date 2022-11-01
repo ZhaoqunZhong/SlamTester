@@ -334,7 +334,7 @@ namespace SlamTester {
     }
 
     void PangolinViewer::blockWaitForStart() {
-        while (!control_started)
+        while (!control_started && running)
             usleep(5 * 1e3);
     }
 
