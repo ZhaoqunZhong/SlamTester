@@ -42,6 +42,8 @@
 
 #include <math.h>
 
+class DsoAlgorithm;
+
 namespace dso
 {
 namespace IOWrap
@@ -126,13 +128,10 @@ inline bool eigenTestNan(const MatXX &m, std::string msg)
 }
 
 
-
-
-
 class FullSystem {
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	FullSystem();
+	FullSystem(DsoAlgorithm *ai_ptr);
 	virtual ~FullSystem();
 
 	// adds a new frame, and creates point & residual structs.
@@ -163,11 +162,11 @@ public:
 	void setOriginalCalib(const VecXf &originalCalib, int originalW, int originalH);
 
 private:
+    DsoAlgorithm* algoInterface;
+
+    void defineSettings();
 
 	CalibHessian Hcalib;
-
-
-
 
 	// opt single point
 	int optimizePoint(PointHessian* point, int minObs, bool flagOOB);

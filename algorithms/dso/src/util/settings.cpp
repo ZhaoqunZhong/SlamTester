@@ -190,7 +190,7 @@ bool debugSaveImages = false;
 bool multiThreading = true;
 bool disableAllDisplay = false;
 bool setting_onlyLogKFPoses = true;
-bool setting_logStuff = true;
+bool setting_logStuff = false;
 
 
 
@@ -198,7 +198,7 @@ bool goStepByStep = false;
 
 
 bool setting_render_displayCoarseTrackingFull=false;
-bool setting_render_renderWindowFrames=true;
+bool setting_render_renderWindowFrames=false;
 bool setting_render_plotTrackingFull = false;
 bool setting_render_display3D = true;
 bool setting_render_displayResidual = true;
@@ -207,7 +207,7 @@ bool setting_render_displayDepth = true;
 
 bool setting_fullResetRequested = false;
 
-bool setting_debugout_runquiet = false;
+bool setting_debugout_runquiet = true;
 
 int sparsityFactor = 5;	// not actually a setting, only some legacy stuff for coarse initializer.
 
@@ -309,6 +309,7 @@ int staticPatternPadding[10] = {
 		2,
 		4
 };
+
 
 
 }

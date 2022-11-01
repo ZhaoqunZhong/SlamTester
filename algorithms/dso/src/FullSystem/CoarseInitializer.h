@@ -32,7 +32,9 @@
 #include <math.h>
 
 
-
+namespace SlamTester {
+    class OutputInterface;
+}
 
 namespace dso
 {
@@ -84,7 +86,8 @@ public:
 
 
 	void setFirst(	CalibHessian* HCalib, FrameHessian* newFrameHessian);
-	bool trackFrame(FrameHessian* newFrameHessian, std::vector<IOWrap::Output3DWrapper*> &wraps);
+	bool trackFrame(FrameHessian* newFrameHessian, std::vector<IOWrap::Output3DWrapper*> &wraps,
+                    std::vector<std::shared_ptr<SlamTester::OutputInterface>> &out_wraps);
 	void calcTGrads(FrameHessian* newFrameHessian);
 
 	int frameID;
@@ -157,7 +160,7 @@ private:
 
 	void makeGradients(Eigen::Vector3f** data);
 
-    void debugPlot(int lvl, std::vector<IOWrap::Output3DWrapper*> &wraps);
+    void debugPlot(int lvl, std::vector<IOWrap::Output3DWrapper*> &wraps, std::vector<std::shared_ptr<SlamTester::OutputInterface>> &out_wraps);
 	void makeNN();
 };
 

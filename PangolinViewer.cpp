@@ -279,7 +279,7 @@ namespace SlamTester {
             // Debug traj alignment
             struct timeval time_now;
             gettimeofday(&time_now, nullptr);
-            if ((time_now.tv_sec - last_align_time.tv_sec) * 1.0f + (time_now.tv_usec - last_align_time.tv_usec) / 1000000.f > 1) {
+            if ((time_now.tv_sec - last_align_time.tv_sec) * 1.0f + (time_now.tv_usec - last_align_time.tv_usec) / 1000000.f > 2) {
                 alignTrajToGt(0, 0.02, imuPoses, imu_times_s, gt_poses, gt_times_s, gtToTraj);
                 last_align_time = time_now;
             }
@@ -383,9 +383,9 @@ namespace SlamTester {
     void PangolinViewer::publishVideoImg(cv::Mat video_img) {
         if (!setting_render_displayVideo) return;
         
-        if (video_img.depth() == CV_16U) 
+        if (video_img.depth() == CV_8U) {}
+        else if (video_img.depth() == CV_16U)
             video_img.convertTo(video_img, CV_8U, 1.0/256);
-        else if (video_img.depth() == CV_8U) {}
         else {
             LOG(ERROR) << "publishVideoImg: Doesn't support this data type."; 
             return;
@@ -457,9 +457,11 @@ namespace SlamTester {
     void PangolinViewer::publishProcessImg(cv::Mat process_img) {
         if (!setting_render_displayProcess) return;
 
-        if (process_img.depth() == CV_16U)
+        if (process_img.depth() == CV_8U) {}
+        else if (process_img.depth() == CV_16U)
             process_img.convertTo(process_img, CV_8U, 1.0/256);
-        else if (process_img.depth() == CV_8U) {}
+/*        else if (process_img.depth() == CV_16F)
+            process_img.convertTo(process_img, CV_8U, 1);*/
         else {
             LOG(ERROR) << "publishProcessImg: Doesn't support this data type.";
             return;
@@ -556,11 +558,14 @@ namespace SlamTester {
         AlignUtils::perform_association(t_offset_traj, max_t_diff,
                                         traj_time_copy, gt_time_copy, traj_copy, gt_pose_copy);
 
+        if (traj_copy.size() < 3)
+            return;
+
         Eigen::Matrix3d R_gtToTraj;
         Eigen::Vector3d t_gtToTraj;
         double s_trajToGt;
 
-        AlignTrajectory::align_trajectory(traj_copy, gt_pose_copy, R_gtToTraj, t_gtToTraj, s_trajToGt, "se3");
+        AlignTrajectory::align_trajectory(traj_copy, gt_pose_copy, R_gtToTraj, t_gtToTraj, s_trajToGt, "sim3");
 
         model3DMutex.lock();
         transform.setIdentity();

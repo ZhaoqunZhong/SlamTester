@@ -36,6 +36,8 @@
 #include "OptimizationBackend/EnergyFunctionalStructs.h"
 #include "IOWrapper/ImageRW.h"
 #include <algorithm>
+#include "opencv2/opencv.hpp"
+#include "../../../../SlamInterface.h"
 
 #if !defined(__SSE3__) && !defined(__SSE2__) && !defined(__SSE1__)
 #include "SSE2NEON.h"
@@ -719,7 +721,8 @@ bool CoarseTracker::trackNewestCoarse(
 
 
 
-void CoarseTracker::debugPlotIDepthMap(float* minID_pt, float* maxID_pt, std::vector<IOWrap::Output3DWrapper*> &wraps)
+void CoarseTracker::debugPlotIDepthMap(float* minID_pt, float* maxID_pt, std::vector<IOWrap::Output3DWrapper*> &wraps,
+                                       std::vector<std::shared_ptr<SlamTester::OutputInterface>> &out_wraps)
 {
     if(w[1] == 0) return;
 
@@ -813,6 +816,13 @@ void CoarseTracker::debugPlotIDepthMap(float* minID_pt, float* maxID_pt, std::ve
 			snprintf(buf, 1000, "images_out/predicted_%05d_%05d.png", lastRef->shell->id, refFrameID);
 			IOWrap::writeImage(buf,&mf);
 		}
+
+        if (!out_wraps.empty()) {
+            cv::Mat show_img(h[lvl], w[lvl], CV_8UC3, mf.data);
+            for (auto &oi: out_wraps) {
+                oi->publishProcessImg(show_img);
+            }
+        }
 
 	}
 }

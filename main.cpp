@@ -16,8 +16,9 @@
 #include "DataSets.h"
 #include "algorithms/Pangolin_Algo_Example.h"
 #include "algorithms/modify-vins-mono/VinsMono.h"
+#include "algorithms/dso/DsoAlgorithm.h"
 
-DEFINE_string(algorithm, "", "Choose one of the following algorithms {example_undistort, vins_mono}");
+DEFINE_string(algorithm, "", "Choose one of the following algorithms {example_undistort, vins_mono, dso}");
 DEFINE_string(dataset, "", "Choose one of the following datasets {euroc, tum_rs}");
 DEFINE_string(algoConfig, "", "Path to algorithm config file.");
 DEFINE_string(camConfig, "", "Path to internal camera config file.");
@@ -27,6 +28,9 @@ DEFINE_string(dataBag, "", "Path to rosbag file.");
 DEFINE_string(groundTruth, "", "Path to ground truth file.");
 DEFINE_bool(rs_cam, false, "Choose rolling shutter camera data if available.");
 DEFINE_bool(resizeAndUndistort, false, "Resize the rgb resolution and undistort before feeding to algorithm.");
+DEFINE_string(gammaFile, "", "Path to camera photometric gamma file.");
+DEFINE_string(vignetteImage, "", "Path to camera photometric vignette image.");
+DEFINE_bool(skipCamMsgIfLag, false, "Skip image if algorithm processing lags behind.");
 
 // Finite automata to sync acc and gyr.
 enum Input {acc,gyr} cur_input;
@@ -224,35 +228,45 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
 
+    /// Set up input Dataset.
+    std::shared_ptr<SlamTester::InputInterface> input_inter;
+    if (FLAGS_dataset == "tum_rs") {
+        input_inter = std::make_shared<SlamTester::TumRsDataset>(FLAGS_camConfig,
+                                                                 FLAGS_imuConfig, FLAGS_ciExtrinsic, FLAGS_dataBag, FLAGS_groundTruth, FLAGS_rs_cam);
+    } else if (FLAGS_dataset == "euroc") {
+        input_inter = std::make_shared<SlamTester::EurocDataset>(FLAGS_camConfig,
+                                                                 FLAGS_imuConfig, FLAGS_ciExtrinsic, FLAGS_dataBag, FLAGS_groundTruth);
+    } else {
+        LOG(ERROR) << "Unknown dataset.";
+        exit(0);
+    }
+
     /// Set up algorithm
     std::unique_ptr<SlamTester::AlgorithmInterface> algorithm_inter;
     if (FLAGS_algorithm == "vins_mono")
         algorithm_inter = std::make_unique<VinsMonoAlgorithm>(FLAGS_algoConfig);
     else if (FLAGS_algorithm == "example_undistort")
         algorithm_inter = std::make_unique<SlamTester::PangolinFakeAlgorithm>();
+    else if (FLAGS_algorithm == "dso") {
+        algorithm_inter = std::make_unique<DsoAlgorithm>();
+    }
     else {
         LOG(ERROR) << "Unknown algorithm.";
         exit(0);
     }
 
-    /// Set up input Dataset.
-    std::shared_ptr<SlamTester::InputInterface> input_inter;
-    if (FLAGS_dataset == "tum_rs") {
-        input_inter = std::make_shared<SlamTester::TumRsDataset>(FLAGS_camConfig,
-             FLAGS_imuConfig, FLAGS_ciExtrinsic, FLAGS_dataBag, FLAGS_groundTruth, FLAGS_rs_cam);
-    } else if (FLAGS_dataset == "euroc") {
-        input_inter = std::make_shared<SlamTester::EurocDataset>(FLAGS_camConfig,
-              FLAGS_imuConfig, FLAGS_ciExtrinsic, FLAGS_dataBag, FLAGS_groundTruth);
-    } else {
-        LOG(ERROR) << "Unknown dataset.";
-        exit(0);
-    }
-    algorithm_inter->input_interfaces.push_back(input_inter);
-
     /// Set up outputs.
-    auto pango_viewer = std::make_shared<SlamTester::PangolinViewer>(input_inter->orig_w,
+    std::shared_ptr<SlamTester::PangolinViewer> pango_viewer;
+    if (FLAGS_resizeAndUndistort)
+        pango_viewer = std::make_shared<SlamTester::PangolinViewer>(input_inter->orig_w,
          input_inter->orig_h, input_inter->inner_w, input_inter->inner_h,
          input_inter->gt_poses,input_inter->gt_times_s, false);
+    else
+        pango_viewer = std::make_shared<SlamTester::PangolinViewer>(input_inter->orig_w,
+            input_inter->orig_h, input_inter->orig_w, input_inter->orig_h,
+             input_inter->gt_poses,input_inter->gt_times_s, false);
+
+    algorithm_inter->input_interfaces.push_back(input_inter);
     algorithm_inter->output_interfaces.push_back(pango_viewer);
 
     algorithm_inter->start();
@@ -290,36 +304,36 @@ int main(int argc, char *argv[]) {
                 usleep( ( bag_time_since_start - sSinceStart) * 1e6 );
             // Since we didn't launch different threads for different sensor streams like online running,
             // we choose not to skip imu messages to stay closer to online scenario.
-            else if (input_inter->monoImg_topic == iter->getTopic() &&
+            else if (input_inter->monoImg_topic == iter->getTopic() && FLAGS_skipCamMsgIfLag &&
                     sSinceStart - bag_time_since_start > 0.033/pango_viewer->getPlayRate()) {// Skip rgb msg if lagging more than 33ms.
                 // LOG(WARNING) << "Skipped msg topic: " << iter->getTopic();
                 LOG(WARNING) << "[SKIPPED ROS MSG]Skipped rgb msg at bag time: " << std::to_string(iter->getTime().toSec());
                 continue;
             }
 
+
             if (input_inter->monoImg_topic == iter->getTopic()) {
+                cv::Mat mat_out;
+                double ts_sec;
                 if (iter->isType<ob_slam::sensor_msgs::Image>()) {
                     ob_slam::sensor_msgs::Image::ConstPtr image_ptr = iter->instantiate<ob_slam::sensor_msgs::Image>();
                     CvBridgeSimple cvb;
-                    cv::Mat mat = cvb.ConvertToCvMat(image_ptr);
-                    // cv::imwrite("/Users/zhongzhaoqun/Downloads/dataset-seq1/vins/ConvertToCvMat.png", mat);
-                    for (auto &oi: algorithm_inter->output_interfaces) {
-                        oi->publishVideoImg(mat);
-                    }
-                    algorithm_inter->input_interfaces[0]->undistortImg(mat, mat);
-                    algorithm_inter->feedMonoImg(image_ptr->header.stamp.toSec(), mat);
+                    mat_out = cvb.ConvertToCvMat(image_ptr);
+                    ts_sec = image_ptr->header.stamp.toSec();
                 } else if (iter->isType<ob_slam::sensor_msgs::CompressedImage>()) { //compressed image
                     ob_slam::sensor_msgs::CompressedImage::ConstPtr image_ptr = iter->instantiate<ob_slam::sensor_msgs::CompressedImage>();
-                    cv::Mat mat = cv::imdecode(image_ptr->data, cv::IMREAD_GRAYSCALE);
-                    for (auto &oi: algorithm_inter->output_interfaces) {
-                        oi->publishVideoImg(mat);
-                    }
-                    algorithm_inter->input_interfaces[0]->undistortImg(mat, mat);
-                    algorithm_inter->feedMonoImg(image_ptr->header.stamp.toSec(), mat);
+                    mat_out = cv::imdecode(image_ptr->data, cv::IMREAD_GRAYSCALE);
+                    ts_sec = image_ptr->header.stamp.toSec();
                 } else {
                     LOG(ERROR) << "Unknown mono image type in ros bag!";
                     return;
                 }
+                for (auto &oi: algorithm_inter->output_interfaces) {
+                    oi->publishVideoImg(mat_out);
+                }
+                cv::Mat_<float> undistorted_mat;
+                algorithm_inter->input_interfaces[0]->undistortImg(mat_out, undistorted_mat);
+                algorithm_inter->feedMonoImg(ts_sec, undistorted_mat);
             }
 
             else if (input_inter->imu_topic == iter->getTopic()) {

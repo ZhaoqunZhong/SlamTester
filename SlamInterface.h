@@ -7,6 +7,9 @@
 
 #include "opencv2/opencv.hpp"
 #include "Eigen/Core"
+#include "glog/logging.h"
+
+DECLARE_bool(resizeAndUndistort);
 
 namespace SlamTester {
     // PangolinViewer 'is' an OutputInterface.
@@ -70,10 +73,10 @@ namespace SlamTester {
         uint inner_w, inner_h;
         cv::Mat remapX, remapY;
         cv::Matx33d inner_cam_k;
-        void undistortImg(cv::Mat in, cv::Mat &out);
+        virtual void undistortImg(cv::Mat &in, cv::Mat &out);
 
     protected:
-        void getUndistorterFromFile(std::string configFilename, std::string gammaFilename, std::string vignetteFilename);
+        virtual void getUndistorterFromFile(std::string configFilename, std::string gammaFilename, std::string vignetteFilename);
         virtual void loadGroundTruth(std::string &gt_file);
     };
 

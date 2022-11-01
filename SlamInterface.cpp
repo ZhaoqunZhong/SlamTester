@@ -6,7 +6,7 @@
 #include "glog/logging.h"
 #include <fstream>
 
-DECLARE_bool(resizeAndUndistort);
+// DECLARE_bool(resizeAndUndistort);
 
 namespace SlamTester {
 
@@ -92,7 +92,7 @@ namespace SlamTester {
         }
 
         cam_k = {ic[0], 0, ic[2], 0, ic[1], ic[3], 0, 0, 1};
-
+        LOG(INFO) << "Original camera K: \n" << cam_k;
 
         std::vector<double> given_new_k;
         std::vector<double> empty;
@@ -108,6 +108,7 @@ namespace SlamTester {
                 cv::fisheye::estimateNewCameraMatrixForUndistortRectify(cam_k, cam_distort, cv::Size2i(orig_w, orig_h),
                                                                         empty, inner_cam_k, 0,
                                                                         cv::Size2i(inner_w, inner_h));
+                // inner_cam_k(0,0) = 564.996;
                 cv::fisheye::initUndistortRectifyMap(cam_k, cam_distort, empty, inner_cam_k,
                                                      cv::Size2i(inner_w, inner_h), CV_32FC1, remapX, remapY);
             }
@@ -157,9 +158,12 @@ namespace SlamTester {
         LOG(INFO) << "Inner camera K: \n" << inner_cam_k;
     }
 
-    void InputInterface::undistortImg(cv::Mat in, cv::Mat &out) {
-        if (!FLAGS_resizeAndUndistort)
+    void InputInterface::undistortImg(cv::Mat &in, cv::Mat &out) {
+        LOG_ASSERT(out.type() == CV_32F);
+        if (!FLAGS_resizeAndUndistort) {
+            out = in;
             return;
+        }
         if (distort_model == RadTan || distort_model == PinHole ||
             distort_model == EquiDistant || distort_model == KannalaBrandt) {
             cv::remap(in, out, remapX, remapY, cv::INTER_LINEAR);

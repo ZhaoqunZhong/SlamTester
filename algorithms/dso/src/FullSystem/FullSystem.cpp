@@ -56,6 +56,10 @@
 
 #include <cmath>
 
+#include "glog/logging.h"
+#include "opencv2/opencv.hpp"
+#include "../../DsoAlgorithm.h"
+
 namespace dso
 {
 int FrameHessian::instanceCounter=0;
@@ -64,115 +68,116 @@ int CalibHessian::instanceCounter=0;
 
 
 
-FullSystem::FullSystem()
-{
+FullSystem::FullSystem(DsoAlgorithm *ai_ptr) {
+    algoInterface = ai_ptr;
+    defineSettings();
 
-	int retstat =0;
-	if(setting_logStuff)
-	{
+    int retstat =0;
+    if(setting_logStuff)
+    {
 
-		retstat += system("rm -rf logs");
-		retstat += system("mkdir logs");
+        retstat += system("rm -rf logs");
+        retstat += system("mkdir logs");
 
-		retstat += system("rm -rf mats");
-		retstat += system("mkdir mats");
+        retstat += system("rm -rf mats");
+        retstat += system("mkdir mats");
 
-		calibLog = new std::ofstream();
-		calibLog->open("logs/calibLog.txt", std::ios::trunc | std::ios::out);
-		calibLog->precision(12);
+        calibLog = new std::ofstream();
+        calibLog->open("logs/calibLog.txt", std::ios::trunc | std::ios::out);
+        calibLog->precision(12);
 
-		numsLog = new std::ofstream();
-		numsLog->open("logs/numsLog.txt", std::ios::trunc | std::ios::out);
-		numsLog->precision(10);
+        numsLog = new std::ofstream();
+        numsLog->open("logs/numsLog.txt", std::ios::trunc | std::ios::out);
+        numsLog->precision(10);
 
-		coarseTrackingLog = new std::ofstream();
-		coarseTrackingLog->open("logs/coarseTrackingLog.txt", std::ios::trunc | std::ios::out);
-		coarseTrackingLog->precision(10);
+        coarseTrackingLog = new std::ofstream();
+        coarseTrackingLog->open("logs/coarseTrackingLog.txt", std::ios::trunc | std::ios::out);
+        coarseTrackingLog->precision(10);
 
-		eigenAllLog = new std::ofstream();
-		eigenAllLog->open("logs/eigenAllLog.txt", std::ios::trunc | std::ios::out);
-		eigenAllLog->precision(10);
+        eigenAllLog = new std::ofstream();
+        eigenAllLog->open("logs/eigenAllLog.txt", std::ios::trunc | std::ios::out);
+        eigenAllLog->precision(10);
 
-		eigenPLog = new std::ofstream();
-		eigenPLog->open("logs/eigenPLog.txt", std::ios::trunc | std::ios::out);
-		eigenPLog->precision(10);
+        eigenPLog = new std::ofstream();
+        eigenPLog->open("logs/eigenPLog.txt", std::ios::trunc | std::ios::out);
+        eigenPLog->precision(10);
 
-		eigenALog = new std::ofstream();
-		eigenALog->open("logs/eigenALog.txt", std::ios::trunc | std::ios::out);
-		eigenALog->precision(10);
+        eigenALog = new std::ofstream();
+        eigenALog->open("logs/eigenALog.txt", std::ios::trunc | std::ios::out);
+        eigenALog->precision(10);
 
-		DiagonalLog = new std::ofstream();
-		DiagonalLog->open("logs/diagonal.txt", std::ios::trunc | std::ios::out);
-		DiagonalLog->precision(10);
+        DiagonalLog = new std::ofstream();
+        DiagonalLog->open("logs/diagonal.txt", std::ios::trunc | std::ios::out);
+        DiagonalLog->precision(10);
 
-		variancesLog = new std::ofstream();
-		variancesLog->open("logs/variancesLog.txt", std::ios::trunc | std::ios::out);
-		variancesLog->precision(10);
-
-
-		nullspacesLog = new std::ofstream();
-		nullspacesLog->open("logs/nullspacesLog.txt", std::ios::trunc | std::ios::out);
-		nullspacesLog->precision(10);
-	}
-	else
-	{
-		nullspacesLog=0;
-		variancesLog=0;
-		DiagonalLog=0;
-		eigenALog=0;
-		eigenPLog=0;
-		eigenAllLog=0;
-		numsLog=0;
-		calibLog=0;
-	}
-
-	assert(retstat!=293847);
+        variancesLog = new std::ofstream();
+        variancesLog->open("logs/variancesLog.txt", std::ios::trunc | std::ios::out);
+        variancesLog->precision(10);
 
 
+        nullspacesLog = new std::ofstream();
+        nullspacesLog->open("logs/nullspacesLog.txt", std::ios::trunc | std::ios::out);
+        nullspacesLog->precision(10);
+    }
+    else
+    {
+        nullspacesLog=0;
+        variancesLog=0;
+        DiagonalLog=0;
+        eigenALog=0;
+        eigenPLog=0;
+        eigenAllLog=0;
+        numsLog=0;
+        calibLog=0;
+    }
 
-	selectionMap = new float[wG[0]*hG[0]];
-
-	coarseDistanceMap = new CoarseDistanceMap(wG[0], hG[0]);
-	coarseTracker = new CoarseTracker(wG[0], hG[0]);
-	coarseTracker_forNewKF = new CoarseTracker(wG[0], hG[0]);
-	coarseInitializer = new CoarseInitializer(wG[0], hG[0]);
-	pixelSelector = new PixelSelector(wG[0], hG[0]);
-
-	statistics_lastNumOptIts=0;
-	statistics_numDroppedPoints=0;
-	statistics_numActivatedPoints=0;
-	statistics_numCreatedPoints=0;
-	statistics_numForceDroppedResBwd = 0;
-	statistics_numForceDroppedResFwd = 0;
-	statistics_numMargResFwd = 0;
-	statistics_numMargResBwd = 0;
-
-	lastCoarseRMSE.setConstant(100);
-
-	currentMinActDist=2;
-	initialized=false;
-
-
-	ef = new EnergyFunctional();
-	ef->red = &this->treadReduce;
-
-	isLost=false;
-	initFailed=false;
-
-
-	needNewKFAfter = -1;
-
-	linearizeOperation=true;
-	runMapping=true;
-	mappingThread = boost::thread(&FullSystem::mappingLoop, this);
-	lastRefStopID=0;
+    assert(retstat!=293847);
 
 
 
-	minIdJetVisDebug = -1;
-	maxIdJetVisDebug = -1;
-	minIdJetVisTracker = -1;
-	maxIdJetVisTracker = -1;
+    selectionMap = new float[wG[0]*hG[0]];
+
+    coarseDistanceMap = new CoarseDistanceMap(wG[0], hG[0]);
+    coarseTracker = new CoarseTracker(wG[0], hG[0]);
+    coarseTracker_forNewKF = new CoarseTracker(wG[0], hG[0]);
+    coarseInitializer = new CoarseInitializer(wG[0], hG[0]);
+    pixelSelector = new PixelSelector(wG[0], hG[0]);
+
+    statistics_lastNumOptIts=0;
+    statistics_numDroppedPoints=0;
+    statistics_numActivatedPoints=0;
+    statistics_numCreatedPoints=0;
+    statistics_numForceDroppedResBwd = 0;
+    statistics_numForceDroppedResFwd = 0;
+    statistics_numMargResFwd = 0;
+    statistics_numMargResBwd = 0;
+
+    lastCoarseRMSE.setConstant(100);
+
+    currentMinActDist=2;
+    initialized=false;
+
+
+    ef = new EnergyFunctional();
+    ef->red = &this->treadReduce;
+
+    isLost=false;
+    initFailed=false;
+
+
+    needNewKFAfter = -1;
+
+    linearizeOperation=true;
+    runMapping=true;
+    mappingThread = boost::thread(&FullSystem::mappingLoop, this);
+    lastRefStopID=0;
+
+
+
+    minIdJetVisDebug = -1;
+    maxIdJetVisDebug = -1;
+    minIdJetVisTracker = -1;
+    maxIdJetVisTracker = -1;
 }
 
 FullSystem::~FullSystem()
@@ -375,7 +380,7 @@ Vec4 FullSystem::trackNewCoarse(FrameHessian* fh)
 
 		if(i != 0)
 		{
-			printf("RE-TRACK ATTEMPT %d with initOption %d and start-lvl %d (ab %f %f): %f %f %f %f %f -> %f %f %f %f %f \n",
+/*			printf("RE-TRACK ATTEMPT %d with initOption %d and start-lvl %d (ab %f %f): %f %f %f %f %f -> %f %f %f %f %f \n",
 					i,
 					i, pyrLevelsUsed-1,
 					aff_g2l_this.a,aff_g2l_this.b,
@@ -388,7 +393,7 @@ Vec4 FullSystem::trackNewCoarse(FrameHessian* fh)
 					coarseTracker->lastResiduals[1],
 					coarseTracker->lastResiduals[2],
 					coarseTracker->lastResiduals[3],
-					coarseTracker->lastResiduals[4]);
+					coarseTracker->lastResiduals[4]);*/
 		}
 
 
@@ -830,18 +835,19 @@ void FullSystem::addActiveFrame( ImageAndExposure* image, int id )
 		// use initializer!
 		if(coarseInitializer->frameID<0)	// first frame set. fh is kept by coarseInitializer.
 		{
-
+            LOG(INFO) << "coarseInitializer->frameID<0";
 			coarseInitializer->setFirst(&Hcalib, fh);
 		}
-		else if(coarseInitializer->trackFrame(fh, outputWrapper))	// if SNAPPED
+		else if(coarseInitializer->trackFrame(fh, outputWrapper, algoInterface->output_interfaces))	// if SNAPPED
 		{
-
+            LOG(INFO) << "coarseInitializer->trackFrame";
 			initializeFromInitializer(fh);
 			lock.unlock();
 			deliverTrackedFrame(fh, true);
 		}
 		else
 		{
+            LOG(INFO) << "still initializing";
 			// if still initializing
 			fh->shell->poseValid = false;
 			delete fh;
@@ -890,10 +896,16 @@ void FullSystem::addActiveFrame( ImageAndExposure* image, int id )
 
 
 
-        for(IOWrap::Output3DWrapper* ow : outputWrapper)
-            ow->publishCamPose(fh->shell, &Hcalib);
-
-
+        // for(IOWrap::Output3DWrapper* ow : outputWrapper)
+        //     ow->publishCamPose(fh->shell, &Hcalib);
+        Eigen::Matrix4d cam_pose = fh->shell->camToWorld.matrix();
+        if (!algoInterface->output_interfaces.empty()) {
+            for (auto &oi: algoInterface->output_interfaces) {
+                // oi->publishCamPose(cam_pose);
+                Eigen::Matrix4d imu_pose = algoInterface->input_interfaces[0]->camToImu.inverse() * cam_pose;
+                oi->publishImuPose(imu_pose);
+            }
+        }
 
 
 		lock.unlock();
@@ -1143,7 +1155,7 @@ void FullSystem::makeKeyFrame( FrameHessian* fh)
 
 
 
-        coarseTracker_forNewKF->debugPlotIDepthMap(&minIdJetVisTracker, &maxIdJetVisTracker, outputWrapper);
+        coarseTracker_forNewKF->debugPlotIDepthMap(&minIdJetVisTracker, &maxIdJetVisTracker, outputWrapper, algoInterface->output_interfaces);
         coarseTracker_forNewKF->debugPlotIDepthMapFloat(outputWrapper);
 	}
 
@@ -1496,6 +1508,27 @@ void FullSystem::printEvalLine()
 
 
 
+    void FullSystem::defineSettings() {
+/*        setting_desiredImmatureDensity = 1500;
+        setting_desiredPointDensity = 2000;
+        setting_minFrames = 5;
+        setting_maxFrames = 7;
+        setting_maxOptIterations=6;
+        setting_minOptIterations=1;*/
 
+        setting_desiredImmatureDensity = 600;
+        setting_desiredPointDensity = 800;
+        setting_minFrames = 4;
+        setting_maxFrames = 6;
+        setting_maxOptIterations=4;
+        setting_minOptIterations=1;
+
+        setting_logStuff = false;
+
+        setting_photometricCalibration = 0;
+        setting_affineOptModeA = 0; //-1: fix. >=0: optimize (with prior, if > 0).
+        setting_affineOptModeB = 0; //-1: fix. >=0: optimize (with prior, if > 0).
+
+    }
 
 }

@@ -36,7 +36,9 @@
 #include "FullSystem/PixelSelector.h"
 #include "FullSystem/PixelSelector2.h"
 #include "util/nanoflann.h"
-
+#include <thread>
+#include "opencv2/opencv.hpp"
+#include "../../../../SlamInterface.h"
 
 #if !defined(__SSE3__) && !defined(__SSE2__) && !defined(__SSE1__)
 #include "SSE2NEON.h"
@@ -59,7 +61,7 @@ CoarseInitializer::CoarseInitializer(int ww, int hh) : thisToNext_aff(0,0), this
 
 	frameID=-1;
 	fixAffine=true;
-	printDebug=false;
+	printDebug= false;
 
 	wM.diagonal()[0] = wM.diagonal()[1] = wM.diagonal()[2] = SCALE_XI_ROT;
 	wM.diagonal()[3] = wM.diagonal()[4] = wM.diagonal()[5] = SCALE_XI_TRANS;
@@ -78,7 +80,8 @@ CoarseInitializer::~CoarseInitializer()
 }
 
 
-bool CoarseInitializer::trackFrame(FrameHessian* newFrameHessian, std::vector<IOWrap::Output3DWrapper*> &wraps)
+bool CoarseInitializer::trackFrame(FrameHessian* newFrameHessian, std::vector<IOWrap::Output3DWrapper*> &wraps,
+                                   std::vector<std::shared_ptr<SlamTester::OutputInterface>> &out_wraps)
 {
 	newFrame = newFrameHessian;
 
@@ -268,19 +271,20 @@ bool CoarseInitializer::trackFrame(FrameHessian* newFrameHessian, std::vector<IO
 
 
 
-    debugPlot(0,wraps);
+    debugPlot(0,wraps, out_wraps);
 
 
 
 	return snapped && frameID > snappedAt+5;
 }
 
-void CoarseInitializer::debugPlot(int lvl, std::vector<IOWrap::Output3DWrapper*> &wraps)
+void CoarseInitializer::debugPlot(int lvl, std::vector<IOWrap::Output3DWrapper*> &wraps,
+                                  std::vector<std::shared_ptr<SlamTester::OutputInterface>> &out_wraps)
 {
-    bool needCall = false;
+/*    bool needCall = false;
     for(IOWrap::Output3DWrapper* ow : wraps)
         needCall = needCall || ow->needPushDepthImage();
-    if(!needCall) return;
+    if(!needCall) return;*/
 
 
 	int wl = w[lvl], hl = h[lvl];
@@ -288,9 +292,9 @@ void CoarseInitializer::debugPlot(int lvl, std::vector<IOWrap::Output3DWrapper*>
 
 	MinimalImageB3 iRImg(wl,hl);
 
-	for(int i=0;i<wl*hl;i++)
-		iRImg.at(i) = Vec3b(colorRef[i][0],colorRef[i][0],colorRef[i][0]);
-
+	for(int i=0;i<wl*hl;i++) {
+        iRImg.at(i) = Vec3b(colorRef[i][0],colorRef[i][0],colorRef[i][0]);
+    }
 
 	int npts = numPoints[lvl];
 
@@ -323,6 +327,13 @@ void CoarseInitializer::debugPlot(int lvl, std::vector<IOWrap::Output3DWrapper*>
 	//IOWrap::displayImage("idepth-R", &iRImg, false);
     for(IOWrap::Output3DWrapper* ow : wraps)
         ow->pushDepthImage(&iRImg);
+
+    if (!out_wraps.empty()) {
+        cv::Mat show_img(hl, wl, CV_8UC3, iRImg.data);
+        for (auto &oi: out_wraps) {
+            oi->publishProcessImg(show_img);
+        }
+    }
 }
 
 // calculates residual, Hessian and Hessian-block neede for re-substituting depth.

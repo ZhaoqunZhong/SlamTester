@@ -55,10 +55,21 @@ namespace SlamTester {
         */
 
         imu_topic = "/imu0";
-        if (rs)
+        YAML::Node cif = YAML::LoadFile(ci_extrinsic);
+        if (rs) {
             monoImg_topic = "/cam1/image_raw";
-        else
+            camToImu.row(0) = Eigen::RowVector4d(cif["cam1"]["T_cam_imu"][0].as<std::vector<double>>().data());
+            camToImu.row(1) = Eigen::RowVector4d(cif["cam1"]["T_cam_imu"][1].as<std::vector<double>>().data());
+            camToImu.row(2) = Eigen::RowVector4d(cif["cam1"]["T_cam_imu"][2].as<std::vector<double>>().data());
+            camToImu.row(3) = Eigen::RowVector4d(cif["cam1"]["T_cam_imu"][3].as<std::vector<double>>().data());
+        } else {
             monoImg_topic = "/cam0/image_raw";
+            camToImu.row(0) = Eigen::RowVector4d(cif["cam0"]["T_cam_imu"][0].as<std::vector<double>>().data());
+            camToImu.row(1) = Eigen::RowVector4d(cif["cam0"]["T_cam_imu"][1].as<std::vector<double>>().data());
+            camToImu.row(2) = Eigen::RowVector4d(cif["cam0"]["T_cam_imu"][2].as<std::vector<double>>().data());
+            camToImu.row(3) = Eigen::RowVector4d(cif["cam0"]["T_cam_imu"][3].as<std::vector<double>>().data());
+        }
+        LOG(INFO) << "cam to imu extrinsic: \n" << camToImu;
         bag_topics = {monoImg_topic, imu_topic};
 /*        LOG(INFO) << "Used rosbag topics: ";
         for (auto &topic : bag_topics) {

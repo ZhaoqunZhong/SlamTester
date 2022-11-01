@@ -50,21 +50,21 @@ set(dso_SOURCE_FILES
 
         ${PROJECT_SOURCE_DIR}/src/IOWrapper/OpenCV/ImageDisplay_OpenCV.cpp
         ${PROJECT_SOURCE_DIR}/src/IOWrapper/OpenCV/ImageRW_OpenCV.cpp
-)
+        DsoAlgorithm.cpp)
 
-include_directories(
-  ${PROJECT_SOURCE_DIR}/src
-  ${PROJECT_SOURCE_DIR}/thirdparty/Sophus
-#  ${PROJECT_SOURCE_DIR}/thirdparty/sse2neon
-#  ${EIGEN3_INCLUDE_DIR}
-		${OpenCV_INCLUDE_DIRS}
-)
 
 # compile main library.
-include_directories( ${CSPARSE_INCLUDE_DIR} ${CHOLMOD_INCLUDE_DIR})
 add_library(dso ${dso_SOURCE_FILES})
 target_link_libraries(dso Boost::system ${CSPARSE_LIBRARY} Boost::thread glog::glog Eigen3::Eigen ${OpenCV_LIBS})
 #set_property( TARGET dso APPEND_STRING PROPERTY COMPILE_FLAGS -Wall )
+target_include_directories(dso PUBLIC
+		${PROJECT_SOURCE_DIR}/src
+		${PROJECT_SOURCE_DIR}/thirdparty/Sophus
+		#  ${PROJECT_SOURCE_DIR}/thirdparty/sse2neon
+		#  ${EIGEN3_INCLUDE_DIR}
+		${OpenCV_INCLUDE_DIRS}
+		${CSPARSE_INCLUDE_DIR} ${CHOLMOD_INCLUDE_DIR}
+		)
 
 #message("==> CMAKE_SYSTEM_NAME : ${CMAKE_SYSTEM_NAME}")
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin") # OSX

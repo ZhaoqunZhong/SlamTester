@@ -10,7 +10,7 @@ namespace SlamTester {
     class TumRsDataset : public InputInterface {
     public:
         TumRsDataset(std::string &camConf, std::string &imuConf, std::string &ciExt, std::string &bag, std::string &gt,
-                     bool rs);
+                     bool rs = false);
         ~TumRsDataset() override = default;
     private:
         void loadGroundTruth(std::string &gt) override;

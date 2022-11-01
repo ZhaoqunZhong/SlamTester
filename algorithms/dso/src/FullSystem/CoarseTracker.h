@@ -33,7 +33,9 @@
 #include "IOWrapper/Output3DWrapper.h"
 
 
-
+namespace SlamTester {
+    class OutputInterface;
+}
 
 namespace dso
 {
@@ -75,7 +77,7 @@ public:
 	int w[PYR_LEVELS];
 	int h[PYR_LEVELS];
 
-    void debugPlotIDepthMap(float* minID, float* maxID, std::vector<IOWrap::Output3DWrapper*> &wraps);
+    void debugPlotIDepthMap(float* minID, float* maxID, std::vector<IOWrap::Output3DWrapper*> &wraps, std::vector<std::shared_ptr<SlamTester::OutputInterface>> &out_wraps);
     void debugPlotIDepthMapFloat(std::vector<IOWrap::Output3DWrapper*> &wraps);
 
 	FrameHessian* lastRef;
