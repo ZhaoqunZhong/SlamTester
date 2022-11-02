@@ -77,7 +77,7 @@ namespace SlamTester {
 
     protected:
         virtual void getUndistorterFromFile(std::string configFilename, std::string gammaFilename, std::string vignetteFilename);
-        virtual void loadGroundTruth(std::string &gt_file);
+        void loadGroundTruthEuroc(std::string &gt_file);
     };
 
 

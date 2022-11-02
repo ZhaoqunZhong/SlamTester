@@ -1509,19 +1509,19 @@ void FullSystem::printEvalLine()
 
 
     void FullSystem::defineSettings() {
-        setting_desiredImmatureDensity = 1500;
+/*        setting_desiredImmatureDensity = 1500;
         setting_desiredPointDensity = 2000;
         setting_minFrames = 5;
         setting_maxFrames = 7;
         setting_maxOptIterations=6;
-        setting_minOptIterations=1;
+        setting_minOptIterations=1;*/
 
-/*        setting_desiredImmatureDensity = 600;
+        setting_desiredImmatureDensity = 600;
         setting_desiredPointDensity = 800;
         setting_minFrames = 4;
         setting_maxFrames = 6;
         setting_maxOptIterations=4;
-        setting_minOptIterations=1;*/
+        setting_minOptIterations=1;
 
         setting_logStuff = false;
 

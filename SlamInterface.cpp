@@ -176,13 +176,16 @@ namespace SlamTester {
     }
 
     // Borrowed from OpenVins Loader.cpp
-    void InputInterface::loadGroundTruth(std::string &gt_file) {
+    void InputInterface::loadGroundTruthEuroc(std::string &gt_file) {
+        //gt file in 'timestamp[ns]	tx	ty	tz	qw	qx	qy	qz  vx  vy  vz  bg[3]  ba[3]' format
+        LOG(INFO) << "Load ground truth file in Euroc format.";
         if (gt_file.empty())
             return;
+
         std::ifstream gtf(gt_file);
         if (!gtf.good()) {
             gtf.close();
-            LOG(ERROR) << "Failed to find ground truth file.";
+            LOG(ERROR) << "Failed to load ground truth file.";
             return;
         }
 
@@ -205,7 +208,7 @@ namespace SlamTester {
                 dlm = ',';
             else
                 dlm = ' ';
-            // Loop through this line (timestamp(s) tx ty tz qx qy qz qw Pr11 Pr12 Pr13 Pr22 Pr23 Pr33 Pt11 Pt12 Pt13 Pt22 Pt23 Pt33)
+
             while (std::getline(s, field, dlm)) {
                 // Skip if empty
                 if (field.empty() || i >= data.rows())
@@ -216,24 +219,13 @@ namespace SlamTester {
             }
 
             // Only a valid line if we have all the parameters
-            if (i >= 20) {
+            if (i >= 8) {
                 // time and pose
-                gt_times_s.push_back(data(0));
-                gt_poses.push_back(data.block(1, 0, 7, 1));
-                // covariance values
-/*                Eigen::Matrix3d c_ori, c_pos;
-                c_ori << data(8), data(9), data(10), data(9), data(11), data(12), data(10), data(12), data(13);
-                c_pos << data(14), data(15), data(16), data(15), data(17), data(18), data(16), data(18), data(19);
-                c_ori = 0.5 * (c_ori + c_ori.transpose());
-                c_pos = 0.5 * (c_pos + c_pos.transpose());
-                cov_ori.push_back(c_ori);
-                cov_pos.push_back(c_pos);*/
-            } else if (i >= 8) {
-                gt_times_s.push_back(data(0));
-                gt_poses.push_back(data.block(1, 0, 7, 1));
+                gt_times_s.push_back(data(0) / 1e9);
+                gt_poses.emplace_back(data(1), data(2), data(3), data(5),
+                                      data(6), data(7), data(4));
             }
         }
-
         // Finally close the file
         gtf.close();
 
@@ -253,12 +245,6 @@ namespace SlamTester {
             std::exit(EXIT_FAILURE);
         }
 
-        // Assert that they are all equal
-/*        if (!cov_ori.empty() && (times.size() != cov_ori.size() || times.size() != cov_pos.size())) {
-            PRINT_ERROR(RED "[LOAD]: Parsing error, timestamps covariance size do not match!!\n" RESET);
-            PRINT_ERROR(RED "[LOAD]: %s\n" RESET, path_traj.c_str());
-            std::exit(EXIT_FAILURE);
-        }*/
     }
 
 }

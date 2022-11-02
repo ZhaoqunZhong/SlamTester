@@ -92,11 +92,11 @@ T readParam(ros::NodeHandle &n, std::string name)
         {
             if ( ESTIMATE_EXTRINSIC == 1)
             {
-                LOG(WARNING) << " Optimize extrinsic param around initial guess!";
+                LOG(INFO) << " Optimize extrinsic param around initial guess!";
                 EX_CALIB_RESULT_PATH = OUTPUT_PATH + "/extrinsic_parameter.csv";
             }
             if (ESTIMATE_EXTRINSIC == 0)
-                LOG(WARNING) << " fix extrinsic param ";
+                LOG(INFO) << " fix extrinsic param ";
 
             cv::Mat cv_R, cv_T;
             fsSettings["extrinsicRotation"] >> cv_R;

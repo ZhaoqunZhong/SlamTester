@@ -62,7 +62,7 @@ namespace SlamTester {
     void PangolinViewer::run() {
         printf("START PANGOLIN!\n");
 
-        pangolin::CreateWindowAndBind("Main", video_w, video_h);
+        pangolin::CreateWindowAndBind("Main", 1000, 800);
         const int UI_WIDTH = 200;
 
         glEnable(GL_DEPTH_TEST);
