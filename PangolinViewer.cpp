@@ -263,26 +263,22 @@ namespace SlamTester {
             pangolin::FinishFrame();
 
             /// Align trajectory with ground truth.
-/*            struct timeval time_now;
+            struct timeval time_now;
             gettimeofday(&time_now, nullptr);
-            if ((time_now.tv_sec - last_align_time.tv_sec) * 1.0f + (time_now.tv_usec - last_align_time.tv_usec) / 1000000.f > 1) {
-                auto &traj_poses = imuPoses;
-                auto &traj_times = imu_times_s;
-                if (!setting_render_showCurrentImu) {
-                    traj_poses = camPoses;
-                    traj_times = cam_times_s;
-                }
-                std::thread align_thread(&PangolinViewer::alignTrajToGt, this, 0, 0.02, std::ref(traj_poses),
-                            std::ref(traj_times), std::ref(gt_poses), std::ref(gt_times_s), std::ref(gtToTraj));
+            if ((time_now.tv_sec - last_align_time.tv_sec) * 1.0f + (time_now.tv_usec - last_align_time.tv_usec) / 1000000.f > 2) {
+                last_align_time = time_now;
+                // std::thread align_thread(&PangolinViewer::alignTrajToGt, this, 0, 0.02, imuPoses, imu_times_s, gt_poses, gt_times_s, gtToTraj);
+                std::thread align_thread(&PangolinViewer::alignTrajToGt, this, 0, 0.02, std::ref(imuPoses), std::ref(imu_times_s),
+                                         std::ref(gt_poses), std::ref(gt_times_s), std::ref(gtToTraj));
                 align_thread.detach();
-            }*/
-            // Debug traj alignment
+            }
+/*            // Debug traj alignment
             struct timeval time_now;
             gettimeofday(&time_now, nullptr);
             if ((time_now.tv_sec - last_align_time.tv_sec) * 1.0f + (time_now.tv_usec - last_align_time.tv_usec) / 1000000.f > 2) {
                 alignTrajToGt(0, 0.02, imuPoses, imu_times_s, gt_poses, gt_times_s, gtToTraj);
                 last_align_time = time_now;
-            }
+            }*/
 
             if (needReset) reset_internal();
         }
