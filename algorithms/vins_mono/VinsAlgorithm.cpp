@@ -25,12 +25,16 @@ void VinsAlgorithm::stop() {
 }
 
 void VinsAlgorithm::feedMonoImg(double ts, cv::Mat mono) {
+    SlamTester::AlgorithmInterface::feedMonoImg(ts, mono);
+
     if (mono.depth() == CV_16U)
         mono.convertTo(mono, CV_8U, 1.0/256);
     vins_algo->subImageData(ts, mono);
 }
 
 void VinsAlgorithm::feedImu(double ts, Eigen::Vector3d acc, Eigen::Vector3d gyr) {
+    SlamTester::AlgorithmInterface::feedImu(ts, acc, gyr);
+
     vins_algo->subImuData(ts, gyr, acc);
 }
 

@@ -92,8 +92,16 @@ namespace SlamTester {
         std::vector<std::shared_ptr<InputInterface>> input_interfaces;
         std::vector<std::shared_ptr<OutputInterface>> output_interfaces;
 
-        virtual void feedMonoImg(double ts, cv::Mat mono) {}
-        virtual void feedImu(double ts, Eigen::Vector3d acc, Eigen::Vector3d gyr) {}
+        virtual void feedMonoImg(double ts, cv::Mat mono) {
+            for (auto &oi: output_interfaces) {
+                oi->publishVideoImg(mono);
+            }
+        }
+        virtual void feedImu(double ts, Eigen::Vector3d acc, Eigen::Vector3d gyr) {
+            for (auto &oi: output_interfaces) {
+                oi->publishImuMsg(acc, gyr);
+            }
+        }
 
         virtual void start() {}
         virtual void stop() {}

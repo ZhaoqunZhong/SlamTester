@@ -328,9 +328,6 @@ int main(int argc, char *argv[]) {
                     LOG(ERROR) << "Unknown mono image type in ros bag!";
                     return;
                 }
-                for (auto &oi: algorithm_inter->output_interfaces) {
-                    oi->publishVideoImg(mat_out);
-                }
                 cv::Mat_<float> undistorted_mat;
                 algorithm_inter->input_interfaces[0]->undistortImg(mat_out, undistorted_mat);
                 algorithm_inter->feedMonoImg(ts_sec, undistorted_mat);

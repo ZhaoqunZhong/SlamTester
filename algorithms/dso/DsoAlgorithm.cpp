@@ -8,6 +8,7 @@
 #include "src/FullSystem/FullSystem.h"
 
 void DsoAlgorithm::feedMonoImg(double ts, cv::Mat mono) {
+    SlamTester::AlgorithmInterface::feedMonoImg(ts, mono);
 /*        // Verify undistortion.
         for (auto &oi : output_interfaces) {
             oi->publishProcessImg(mono);
