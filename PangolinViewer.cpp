@@ -7,7 +7,6 @@
 #include "PangolinViewer.h"
 #include "Eigen/Core"
 #include "glog/logging.h"
-#include "alignment/AlignUtils.h"
 #include "alignment/AlignTrajectory.h"
 
 namespace SlamTester {
