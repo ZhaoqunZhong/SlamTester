@@ -9,8 +9,7 @@
 namespace SlamTester {
     class TumRsDataset : public InputInterface {
     public:
-        TumRsDataset(std::string &camConf, std::string &imuConf, std::string &ciExt, std::string &bag, std::string &gt,
-                     bool rs = false);
+        TumRsDataset(std::string &camConf, std::string &imuConf, std::string &ciExt, std::string &bag, std::string &gt, bool rs = false);
         ~TumRsDataset() override = default;
     };
 

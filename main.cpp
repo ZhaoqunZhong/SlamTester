@@ -31,6 +31,7 @@ DEFINE_bool(resizeAndUndistort, false, "Resize the rgb resolution and undistort 
 DEFINE_string(gammaFile, "", "Path to camera photometric gamma file.");
 DEFINE_string(vignetteImage, "", "Path to camera photometric vignette image.");
 DEFINE_bool(skipCamMsgIfLag, false, "Skip image if algorithm processing lags behind.");
+DEFINE_bool(showOrigCamStream, false, "");
 
 // Finite automata to sync acc and gyr.
 enum Input {acc,gyr} cur_input;
@@ -217,6 +218,8 @@ void feedGyr(double ts, Eigen::Vector3d gyr_msg, SlamTester::AlgorithmInterface 
 
 
 int main(int argc, char *argv[]) {
+    gflags :: SetUsageMessage ( "Usage : run run_example.sh " ) ;
+    // gflags::ShowUsageWithFlags(argv[0]);
     gflags::ParseCommandLineFlags(&argc, &argv, true);
     FLAGS_logtostdout = true;
     FLAGS_colorlogtostdout = true;
@@ -327,6 +330,11 @@ int main(int argc, char *argv[]) {
                 } else {
                     LOG(ERROR) << "Unknown mono image type in ros bag!";
                     return;
+                }
+                if (FLAGS_showOrigCamStream) {
+                    for (auto &oi: algorithm_inter->output_interfaces) {
+                        oi->publishVideoImg(mat_out);
+                    }
                 }
                 cv::Mat_<float> undistorted_mat;
                 algorithm_inter->input_interfaces[0]->undistortImg(mat_out, undistorted_mat);

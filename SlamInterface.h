@@ -12,8 +12,7 @@
 DECLARE_bool(resizeAndUndistort);
 
 namespace SlamTester {
-    // PangolinViewer 'is' an OutputInterface.
-    // So use inheritance.
+
     class OutputInterface {
     public:
         OutputInterface() {}
@@ -35,8 +34,7 @@ namespace SlamTester {
         KannalaBrandt,
         FOV
     };
-    // A certain slam algorithm 'has' an InputInterface.
-    // So use member class ptr.
+
     // EASY to support multiple cameras.
     class InputInterface {
     public:
@@ -92,11 +90,7 @@ namespace SlamTester {
         std::vector<std::shared_ptr<InputInterface>> input_interfaces;
         std::vector<std::shared_ptr<OutputInterface>> output_interfaces;
 
-        virtual void feedMonoImg(double ts, cv::Mat mono) {
-            for (auto &oi: output_interfaces) {
-                oi->publishVideoImg(mono);
-            }
-        }
+        virtual void feedMonoImg(double ts, cv::Mat mono) {}
         virtual void feedImu(double ts, Eigen::Vector3d acc, Eigen::Vector3d gyr) {
             for (auto &oi: output_interfaces) {
                 oi->publishImuMsg(acc, gyr);

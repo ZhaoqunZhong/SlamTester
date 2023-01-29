@@ -900,7 +900,7 @@ namespace rosbag {
         CHECK(chunk_header.compressed_size == chunk_header.uncompressed_size);
 
         //    CONSOLE_BRIDGE_logDebug("compressed_size: %d uncompressed_size: %d", chunk_header.compressed_size, chunk_header.uncompressed_size);
-        DLOG(INFO) << "compressed_size: " << chunk_header.compressed_size << " uncompressed_size: " << chunk_header.uncompressed_size;
+        // DLOG(INFO) << "compressed_size: " << chunk_header.compressed_size << " uncompressed_size: " << chunk_header.uncompressed_size;
 
         decompress_buffer_.setSize(chunk_header.compressed_size);
         file_.read((char*)decompress_buffer_.getData(), chunk_header.compressed_size);
