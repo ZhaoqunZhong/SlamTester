@@ -11,7 +11,7 @@
 // #include <std_msgs/Header.h>
 // #include <std_msgs/Float32.h>
 
-#include <ceres/ceres.h>
+#include "ceres/ceres.h"
 #include "factor/imu_factor.h"
 #include "factor/pose_local_parameterization.h"
 #include "factor/projection_factor.h"
@@ -19,6 +19,7 @@
 #include "factor/marginalization_factor.h"
 
 #include <unordered_map>
+#include <unordered_set>
 #include <queue>
 #include <opencv2/core/eigen.hpp>
 

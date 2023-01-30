@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10.2)
 project(camera_model)
 
 
-add_library(${PROJECT_NAME}
+add_library(${PROJECT_NAME} SHARED
 #    src/chessboard/Chessboard.cc
 #    src/calib/CameraCalibration.cc
     src/camera_models/Camera.cc
@@ -17,13 +17,15 @@ add_library(${PROJECT_NAME}
     src/gpl/EigenQuaternionParameterization.cc)
 
 #target_link_libraries(Calibration ${Boost_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES})
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME} PUBLIC
         Eigen3::Eigen
-        Ceres::ceres
+        ${CERES_LIBRARIES}
         ${OpenCV_LIBS}
         Boost::filesystem
         )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
         include
-        ${OpenCV_INCLUDE_DIRS})
+        ${OpenCV_INCLUDE_DIRS}
+        ${CERES_INCLUDE_DIRS}
+        )

@@ -7,7 +7,7 @@
 #include <cmath>
 #include <cassert>
 #include <cstring>
-#include <Eigen/Dense>
+#include <Eigen/Eigen>
 
 class Utility
 {

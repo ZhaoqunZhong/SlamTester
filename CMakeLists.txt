@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.23)
 project(SlamTester)
 
+# make stop at first error
+add_definitions(-Wfatal-errors)
+# Disable warning in make process
+add_definitions(-w)
+
 set(CMAKE_CXX_STANDARD 17)
 
 find_package(Pangolin REQUIRED)

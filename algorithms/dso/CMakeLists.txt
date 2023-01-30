@@ -54,7 +54,7 @@ set(dso_SOURCE_FILES
 
 
 # compile main library.
-add_library(dso ${dso_SOURCE_FILES})
+add_library(dso SHARED ${dso_SOURCE_FILES})
 target_link_libraries(dso Boost::system ${CSPARSE_LIBRARY} Boost::thread glog::glog Eigen3::Eigen ${OpenCV_LIBS})
 #set_property( TARGET dso APPEND_STRING PROPERTY COMPILE_FLAGS -Wall )
 target_include_directories(dso PUBLIC

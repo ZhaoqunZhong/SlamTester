@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10.2)
 project(vins_estimator)
 
-add_library(${PROJECT_NAME}
+add_library(${PROJECT_NAME} SHARED
 #    src/estimator_node.cpp
     src/parameters.cpp
     src/estimator.cpp
@@ -20,9 +20,11 @@ add_library(${PROJECT_NAME}
     )
 
 
-target_link_libraries(${PROJECT_NAME}
-        Ceres::ceres
-        ${OpenCV_LIBS})
+target_link_libraries(${PROJECT_NAME} PUBLIC
+        feature_tracker
+        ${OpenCV_LIBS}
+        Eigen3::Eigen
+        )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
         ${OpenCV_INCLUDE_DIRS})

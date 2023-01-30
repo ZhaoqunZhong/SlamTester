@@ -4,6 +4,7 @@
 
 #include "VinsAlgorithm.h"
 #include "system.h"
+#include <memory>
 
 VinsAlgorithm::VinsAlgorithm(string &config) {
     vins_algo = std::make_unique<System>(config, this);

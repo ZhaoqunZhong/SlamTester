@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.10.2)
 project(vins_mono)
 
 find_package(OpenCV REQUIRED)
-find_package(Ceres REQUIRED)
+find_package(Ceres 1.14 REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Boost 1.70 REQUIRED COMPONENTS filesystem)
 
@@ -24,7 +24,7 @@ add_library( # Sets the name of the library.
         system.cpp
         VinsAlgorithm.cpp)
 
-target_link_libraries(${PROJECT_NAME} # Specifies the target library.
+target_link_libraries(${PROJECT_NAME} PUBLIC
         camera_model
         feature_tracker
         vins_estimator
