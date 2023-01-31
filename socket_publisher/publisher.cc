@@ -14,7 +14,8 @@ publisher::publisher(const YAML::Node& yaml_node/*,
     : /*system_(system),*/
   emitting_interval_(yaml_node["emitting_interval"].as<unsigned int>(15000)),
   image_quality_(yaml_node["image_quality"].as<unsigned int>(20)),
-  client_(new socket_client(yaml_node["server_uri"].as<std::string>("http://localhost:3000"))) {
+  client_(new socket_client(yaml_node["server_uri"].as<std::string>("http://localhost:3000"))), 
+  pose_source_(yaml_node["pose_source"].as<std::string>("imu")) {
     data_serializer_ = std::unique_ptr<data_serializer>(new data_serializer(
         /*frame_publisher, map_publisher,*/
         yaml_node["publish_points"].as<bool>(true)));
@@ -33,15 +34,20 @@ void publisher::run() {
         const auto t0 = std::chrono::system_clock::now();
 
         // const auto serialized_map_data = data_serializer_->serialize_map_diff();
-        {
+        Eigen::Matrix4d pose;
+        if (pose_source_ == "cam") {
             std::lock_guard<std::mutex> lock(mtx_latest_cam_pose_);
-            const auto pose = latest_cam_pose_;
-
-            const auto serialized_map_data = data_serializer_->serialize_latest_pose(pose);
-            if (!serialized_map_data.empty()) {
-                client_->emit("map_publish", serialized_map_data);
-            }
+            pose = latest_cam_pose_;
+        } else if (pose_source_ == "imu") {
+            std::lock_guard<std::mutex> lock(mtx_latest_imu_pose_);
+            pose = latest_imu_pose_;
         }
+
+        const auto serialized_map_data = data_serializer_->serialize_latest_pose(pose);
+        if (!serialized_map_data.empty()) {
+            client_->emit("map_publish", serialized_map_data);
+        }
+        
 
 
 /*        const auto serialized_frame_data = data_serializer_->serialize_latest_frame(image_quality_);
@@ -158,6 +164,11 @@ void publisher::publishProcessImg(cv::Mat process_img) {
 void publisher::publishCamPose(Eigen::Matrix4d &cam_pose, double ts) {
     std::lock_guard<std::mutex> lock(mtx_latest_cam_pose_);
     latest_cam_pose_ = cam_pose;
+}
+
+void publisher::publishImuPose(Eigen::Matrix4d &imu_pose, double ts) {
+    std::lock_guard<std::mutex> lock(mtx_latest_imu_pose_);
+    latest_imu_pose_ = imu_pose;
 }
 
 } // namespace socket_publisher

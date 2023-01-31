@@ -349,7 +349,7 @@ namespace SlamTester {
         if (lastNcamPoseMs.size() > 10) lastNcamPoseMs.pop_front();
         last_camPose_t = time_now;
 
-        camToWorld = cam_pose;
+        camToWorld = cam_pose.inverse();
         Eigen::Matrix<double,7,1> cam_pose7;
         cam_pose7.block<3,1>(0,0) = camToWorld.block<3,1>(0,3);
         cam_pose7.block<4,1>(3,0) = AlignUtils::rot_2_quat(camToWorld.block<3,3>(0,0));
@@ -369,7 +369,7 @@ namespace SlamTester {
         if (lastNimuPoseMs.size() > 30) lastNimuPoseMs.pop_front();
         last_imuPose_t = time_now;
 
-        imuToWorld = imu_pose;
+        imuToWorld = imu_pose.inverse();
         Eigen::Matrix<double,7,1> imu_pose7;
         imu_pose7.block<3,1>(0,0) = imuToWorld.block<3,1>(0,3);
         imu_pose7.block<4,1>(3,0) = AlignUtils::rot_2_quat(imuToWorld.block<3,3>(0,0));

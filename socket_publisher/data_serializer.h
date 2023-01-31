@@ -39,7 +39,7 @@ public:
 
     std::string serialize_latest_frame(const cv::Mat frame, const unsigned int image_quality_);
 
-    std::string serialize_latest_pose(const Eigen::Matrix4d current_camera_pose);
+    std::string serialize_latest_pose(const Eigen::Matrix4d current_pose);
 
     static std::string serialized_reset_signal_;
 
@@ -51,7 +51,7 @@ private:
     // std::unique_ptr<std::unordered_map<unsigned int, double>> point_hash_map_;
 
     double current_pose_hash_ = 0;
-    // int frame_hash_ = 0;
+    int frame_id_cnt_ = 0;
 
 /*    inline double get_vec_hash(const stella_vslam::Vec3_t& point) {
         return point[0] + point[1] + point[2];

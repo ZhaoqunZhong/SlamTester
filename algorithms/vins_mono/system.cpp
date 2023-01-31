@@ -344,12 +344,14 @@ void System::process()
                 Quaterniond q_wi;
                 q_wi = Quaterniond(estimator.Rs[vins_estimator::WINDOW_SIZE]);
                 p_wi = estimator.Ps[vins_estimator::WINDOW_SIZE];*/
-                Matrix4d world_to_imu = Matrix4d::Identity();
-                world_to_imu.block<3,3>(0,0) = estimator.Rs[vins_estimator::WINDOW_SIZE];
-                world_to_imu.block<3,1>(0,3) = estimator.Ps[vins_estimator::WINDOW_SIZE];
-                Matrix4d imu_to_world = world_to_imu.inverse();
+                Matrix4d imu_to_world = Matrix4d::Identity();
+                imu_to_world.block<3,3>(0,0) = estimator.Rs[vins_estimator::WINDOW_SIZE];
+                imu_to_world.block<3,1>(0,3) = estimator.Ps[vins_estimator::WINDOW_SIZE];
+                Matrix4d world_to_imu = imu_to_world.inverse();
                 for (auto &oi : algoInterface->output_interfaces) {
-                    oi->publishImuPose(imu_to_world, estimator.Headers[vins_estimator::WINDOW_SIZE]);
+                    oi->publishImuPose(world_to_imu, estimator.Headers[vins_estimator::WINDOW_SIZE]);
+                    Matrix4d world_to_cam = world_to_imu * algoInterface->input_interfaces[0]->camToImu.inverse();
+                    oi->publishCamPose(world_to_cam, estimator.Headers[vins_estimator::WINDOW_SIZE]);
                 }
 /*                vPath_to_draw.push_back(p_wi);
                 double dStamp = estimator.Headers[vins_estimator::WINDOW_SIZE];

@@ -66,13 +66,13 @@ std::string data_serializer::serialize_messages(const std::vector<std::string>& 
     return serialize_as_protobuf(keyframes, all_landmarks, local_landmarks, current_camera_pose);
 }*/
 
-std::string data_serializer::serialize_latest_pose(const Eigen::Matrix4d current_camera_pose) {
+std::string data_serializer::serialize_latest_pose(const Eigen::Matrix4d current_pose) {
     map_segment::map map;
     auto message = map.add_messages();
     message->set_tag("0");
     message->set_txt("only map data");
 
-    const double pose_hash = get_mat_hash(current_camera_pose);
+    const double pose_hash = get_mat_hash(current_pose);
     if (pose_hash == current_pose_hash_) {
         current_pose_hash_ = pose_hash;
         return "";
@@ -84,14 +84,25 @@ std::string data_serializer::serialize_latest_pose(const Eigen::Matrix4d current
     for (int i = 0; i < 16; i++) {
         int ir = i / 4;
         int il = i % 4;
-        pose_obj.add_pose(current_camera_pose(ir, il));
+        pose_obj.add_pose(current_pose(ir, il));
     }
     map.set_allocated_current_frame(&pose_obj);
+
+    auto keyfrm_obj = map.add_keyframes();
+    keyfrm_obj->set_id(frame_id_cnt_++);
+    map_segment::map_Mat44* keyframe_pose = new map_segment::map_Mat44();
+    for (int i = 0; i < 16; i++) {
+        int ir = i / 4;
+        int il = i % 4;
+        keyframe_pose->add_pose(current_pose(ir, il));
+    }
+    keyfrm_obj->set_allocated_pose(keyframe_pose);
 
     std::string buffer;
     map.SerializeToString(&buffer);
 
     map.release_current_frame();
+    keyfrm_obj->clear_pose();
 
     const auto* cstr = reinterpret_cast<const unsigned char*>(buffer.c_str());
     return base64_encode(cstr, buffer.length());

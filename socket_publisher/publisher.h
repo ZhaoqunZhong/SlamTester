@@ -42,7 +42,7 @@ namespace socket_publisher {
 
             // ==================== Slam results interface ======================
         void publishCamPose(Eigen::Matrix4d &cam_pose, double ts) override;
-        // void publishImuPose(Eigen::Matrix4d &imu_pose, double ts) override;
+        void publishImuPose(Eigen::Matrix4d &imu_pose, double ts) override;
         // void publishVideoImg(cv::Mat video_img) override;
         void publishProcessImg(cv::Mat process_img) override;
         // void publishImuMsg(Eigen::Vector3d acc, Eigen::Vector3d gyr) override;
@@ -77,6 +77,9 @@ namespace socket_publisher {
 
         std::mutex mtx_latest_cam_pose_;
         Eigen::Matrix4d latest_cam_pose_;
+        std::mutex mtx_latest_imu_pose_;
+        Eigen::Matrix4d latest_imu_pose_;
+        std::string pose_source_;
     };
 
 } // namespace socket_publisher
