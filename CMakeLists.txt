@@ -6,7 +6,9 @@ add_definitions(-Wfatal-errors)
 # Disable warning in make process
 add_definitions(-w)
 
-set(CMAKE_CXX_STANDARD 17)
+include(/usr/local/lib/cmake/colorMessage.cmake)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -fPIC")
 
 find_package(Pangolin REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -16,6 +18,7 @@ find_package(yaml-cpp REQUIRED)
 #message("==> OpenCV_INCLUDE_DIRS : ${OpenCV_INCLUDE_DIRS}")
 #message("==> OpenCV_LIBS: ${OpenCV_LIBS}")
 
+add_subdirectory(socket_publisher)
 add_subdirectory(rosbag)
 add_subdirectory(algorithms/vins_mono)
 add_subdirectory(algorithms/dso)
@@ -28,6 +31,7 @@ add_executable(${PROJECT_NAME}
         alignment/AlignUtils.cpp
         alignment/AlignTrajectory.cpp
         algorithms/Pangolin_Algo_Example.cpp
+        backward.cpp
         )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
@@ -37,7 +41,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         ${OpenCV_LIBS}
         glog::glog
         yaml-cpp
-
+        socket_publisher
         vins_mono
         dso
         )

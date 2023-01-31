@@ -93,7 +93,7 @@ namespace SlamTester {
         bool setting_render_displayProcess;
         bool setting_render_fullResetRequested;
         bool control_started = false;
-        float setting_playback_rate;
+        float setting_playback_rate = 1;
 
         // timings
         struct timeval last_camPose_t;

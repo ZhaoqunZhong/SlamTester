@@ -8,7 +8,7 @@ fi
 
 cmake \
 	-DCMAKE_BUILD_TYPE=RelWithDebInfo \
-    -DCMAKE_CXX_STANDARD=14 \
+    -DCMAKE_CXX_STANDARD=17 \
     ..
 
 make -j6
