@@ -2,5 +2,6 @@
 .idea/
 cmake-build-release/
 cmake-build-debug/
-*/.DS_Store
+.DS_Store
+**/.DS_Store
 build/
