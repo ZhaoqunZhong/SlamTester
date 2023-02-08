@@ -28,6 +28,7 @@
 #include "util/NumType.h"
 #include "vector"
 #include <math.h>
+#include <memory>
 #include "util/settings.h"
 #include "OptimizationBackend/MatrixAccumulators.h"
 #include "IOWrapper/Output3DWrapper.h"

@@ -5,11 +5,12 @@ find_package(sioclient REQUIRED)
 # message(STATUS "${BoldYellow}sioclient version: ${PACKAGE_VERSION_EXACT} ${ColorReset}")
 
 # Protobuf
-find_package(Protobuf REQUIRED)
-if(NOT PROTOBUF_PROTOC_EXECUTABLE)
-    message(FATAL_ERROR "Could not find protoc executable (PROTOBUF_PROTOC_EXECUTABLE)")
-endif()
-message(STATUS "Found protoc executable: ${PROTOBUF_PROTOC_EXECUTABLE}")
+find_package(protobuf REQUIRED)
+# DEBUG_PRINT(PROTOBUF_PROTOC_EXECUTABLE:${PROTOBUF_PROTOC_EXECUTABLE})
+# if(NOT PROTOBUF_PROTOC_EXECUTABLE)
+#     message(FATAL_ERROR "Could not find protoc executable (PROTOBUF_PROTOC_EXECUTABLE)")
+# endif()
+# message(STATUS "Found protoc executable: ${PROTOBUF_PROTOC_EXECUTABLE}")
 
 # ----- Protobuf transpile -----
 
@@ -38,7 +39,7 @@ set_target_properties(socket_publisher PROPERTIES
 
 target_include_directories(socket_publisher
                            PUBLIC
-                           # ${SIOCLIENT_INCLUDE_DIR}
+                           ${SIOCLIENT_INCLUDE_DIR}
                            /usr/local/include
                            ${PROTOBUF_INCLUDE_DIRS}
                            PRIVATE
@@ -49,8 +50,8 @@ target_link_libraries(socket_publisher
                       ${PROJECT_NAME}
                       opencv_imgcodecs
                       Eigen3::Eigen
-                      sioclient::sioclient
-                      # ${SIOCLIENT_LIBRARY}
+                      # sioclient
+                      ${SIOCLIENT_LIBRARY}
                       ${PROTOBUF_LIBRARIES})
 
 # ----- Install configuration -----

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10.2)
 project(vins_estimator)
 
-add_library(${PROJECT_NAME} SHARED
+add_library(${PROJECT_NAME} STATIC
 #    src/estimator_node.cpp
     src/parameters.cpp
     src/estimator.cpp

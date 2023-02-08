@@ -30,6 +30,7 @@
 #include "util/settings.h"
 #include "vector"
 #include <math.h>
+#include <memory>
 
 
 namespace SlamTester {

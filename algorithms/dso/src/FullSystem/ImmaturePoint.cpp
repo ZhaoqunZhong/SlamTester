@@ -26,6 +26,7 @@
 #include "FullSystem/ImmaturePoint.h"
 #include "util/FrameShell.h"
 #include "FullSystem/ResidualProjections.h"
+#include "glog/logging.h"
 
 namespace dso
 {
@@ -77,7 +78,7 @@ ImmaturePointStatus ImmaturePoint::traceOn(FrameHessian* frame,const Mat33f &hos
 	if(lastTraceStatus == ImmaturePointStatus::IPS_OOB) return lastTraceStatus;
 
 
-	debugPrint = false;//rand()%100==0;
+	debugPrint = true;//rand()%100==0;
 	float maxPixSearch = (wG[0]+hG[0])*setting_maxPixSearch;
 
 	if(debugPrint)
@@ -114,10 +115,14 @@ ImmaturePointStatus ImmaturePoint::traceOn(FrameHessian* frame,const Mat33f &hos
 	Vec3f ptpMax;
 	if(std::isfinite(idepth_max))
 	{
+		LOG(WARNING) << "pr: " << pr.transpose();
+		LOG(WARNING) << "\n" << "hostToFrame_Kt: " << hostToFrame_Kt;
+		LOG(WARNING) << "idepth_max: " << idepth_max;
 		ptpMax = pr + hostToFrame_Kt*idepth_max;
 		uMax = ptpMax[0] / ptpMax[2];
 		vMax = ptpMax[1] / ptpMax[2];
-
+		LOG(WARNING) << "ptpMax: " << ptpMax.transpose();
+		LOG(WARNING) << "uMax, vMax: " << uMax << " " << vMax;
 
 		if(!(uMax > 4 && vMax > 4 && uMax < wG[0]-5 && vMax < hG[0]-5))
 		{
@@ -131,6 +136,7 @@ ImmaturePointStatus ImmaturePoint::traceOn(FrameHessian* frame,const Mat33f &hos
 
 		// ============== check their distance. everything below 2px is OK (-> skip). ===================
 		dist = (uMin-uMax)*(uMin-uMax) + (vMin-vMax)*(vMin-vMax);
+		LOG(WARNING) << "dist: " << dist;
 		dist = sqrtf(dist);
 		if(dist < setting_trace_slackInterval)
 		{

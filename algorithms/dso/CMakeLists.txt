@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 # required libraries
-find_package(SuiteParse REQUIRED)
+find_package(SuiteSparse REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Boost COMPONENTS system thread)
 find_package(glog REQUIRED)
@@ -21,7 +21,8 @@ find_package(Pangolin QUIET )
 find_package(OpenCV QUIET)
 
 # flags
-#add_definitions("-DENABLE_SSE")
+add_definitions("-DENABLE_SSE")
+message(STATUS "SSE_FLAGS: " ${SSE_FLAGS})
 #set(CMAKE_CXX_FLAGS
 #   "${SSE_FLAGS} -O3 -g -std=c++0x -march=native"
 ##   "${SSE_FLAGS} -O3 -g -std=c++0x -fno-omit-frame-pointer"
@@ -60,7 +61,7 @@ target_link_libraries(dso Boost::system ${CSPARSE_LIBRARY} Boost::thread glog::g
 target_include_directories(dso PUBLIC
 		${PROJECT_SOURCE_DIR}/src
 		${PROJECT_SOURCE_DIR}/thirdparty/Sophus
-		#  ${PROJECT_SOURCE_DIR}/thirdparty/sse2neon
+		${PROJECT_SOURCE_DIR}/thirdparty/sse2neon
 		#  ${EIGEN3_INCLUDE_DIR}
 		${OpenCV_INCLUDE_DIRS}
 		${CSPARSE_INCLUDE_DIR} ${CHOLMOD_INCLUDE_DIR}

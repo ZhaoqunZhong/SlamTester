@@ -1,13 +1,14 @@
-./build/SlamTester \
--algorithm=dso \
--camConfig=/Users/zhongzhaoqun/Downloads/Euroc/camera_euroc.txt \
--dataBag=/Users/zhongzhaoqun/Downloads/MH-01-easy/MH_01_easy.bag \
+./armpl-build/SlamTester \
+-algorithm=vins_mono \
+-camConfig=/media/psf/Home/Downloads/Euroc/camera_euroc.txt \
+-dataBag=/media/psf/Home/Downloads/MH-01-easy/MH_01_easy.bag \
 -dataset=euroc \
--groundTruth=/Users/zhongzhaoqun/Downloads/MH-01-easy/state_groundtruth_estimate0/data.csv \
--ciExtrinsic=/Users/zhongzhaoqun/Downloads/MH-01-easy/cam0/sensor.yaml \
--resizeAndUndistort=true \
--algoConfig=/Users/zhongzhaoqun/Downloads/Euroc/euroc_config.yaml \
+-groundTruth=/media/psf/Home/Downloads/MH-01-easy/state_groundtruth_estimate0/data.csv \
+-ciExtrinsic=/media/psf/Home/Downloads/MH-01-easy/cam0/sensor.yaml \
+-resizeAndUndistort=false \
+-algoConfig=/media/psf/Home/Downloads/Euroc/euroc_config.yaml \
 -skipCamMsgIfLag=false \
--showOrigCamStream=true \
+-showOrigCamStream=false \
 -viewer=socket \
--socketConfig=/Users/zhongzhaoqun/CLionProjects/SlamTester/socket_publisher/config.yaml 
+-socketConfig=/home/zhaoqun/Documents/SlamTester/socket_publisher/config.yaml \
+-bag_play_rate=1

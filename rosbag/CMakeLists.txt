@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10.2)
 
-project(rosbag)
+project(custom_rosbag)
 
 find_package(glog REQUIRED)
 find_package(OpenCV REQUIRED)
@@ -9,7 +9,7 @@ FILE(GLOB_RECURSE RosbagStorage_SOURCES
         src/RosbagStorage/*.c
         src/RosbagStorage/*.cpp
         )
-add_library(${PROJECT_NAME} SHARED
+add_library(${PROJECT_NAME} STATIC
         src/rostime/rate.cpp
         src/rostime/time.cpp
         src/rostime/duration.cpp

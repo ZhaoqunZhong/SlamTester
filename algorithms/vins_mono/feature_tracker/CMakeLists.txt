@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10.2)
 project(feature_tracker)
 
-add_library(feature_tracker SHARED
+add_library(feature_tracker STATIC
 #    src/feature_tracker_node.cpp
         src/parameters.cpp
     src/feature_tracker.cpp

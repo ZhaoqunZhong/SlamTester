@@ -1,16 +1,7 @@
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 3.10)
 project(SlamTester)
 
-# make stop at first error
-add_definitions(-Wfatal-errors)
-# Disable warning in make process
-add_definitions(-w)
-
-include(/usr/local/lib/cmake/colorMessage.cmake)
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -fPIC")
-
-find_package(Pangolin REQUIRED)
+# find_package(Pangolin REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(glog REQUIRED)
@@ -23,21 +14,24 @@ add_subdirectory(rosbag)
 add_subdirectory(algorithms/vins_mono)
 add_subdirectory(algorithms/dso)
 
-add_executable(${PROJECT_NAME}
+# set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+# set(BUILD_SHARED_LIBS OFF)
+# set(CMAKE_EXE_LINKER_FLAGS "-static")
+
+add_executable(${PROJECT_NAME} 
         main.cpp
-        PangolinViewer.cpp
+        # PangolinViewer.cpp
         SlamInterface.cpp
         DataSets.cpp
         alignment/AlignUtils.cpp
         alignment/AlignTrajectory.cpp
-        algorithms/Pangolin_Algo_Example.cpp
-        backward.cpp
+        # algorithms/Pangolin_Algo_Example.cpp
         )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
-        pango_display
+        # pango_display
         Eigen3::Eigen
-        rosbag
+        custom_rosbag
         ${OpenCV_LIBS}
         glog::glog
         yaml-cpp

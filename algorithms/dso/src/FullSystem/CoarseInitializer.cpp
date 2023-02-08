@@ -61,7 +61,7 @@ CoarseInitializer::CoarseInitializer(int ww, int hh) : thisToNext_aff(0,0), this
 
 	frameID=-1;
 	fixAffine=true;
-	printDebug= false;
+	printDebug=false;
 
 	wM.diagonal()[0] = wM.diagonal()[1] = wM.diagonal()[2] = SCALE_XI_ROT;
 	wM.diagonal()[3] = wM.diagonal()[4] = wM.diagonal()[5] = SCALE_XI_TRANS;

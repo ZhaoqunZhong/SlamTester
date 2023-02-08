@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10.2)
 project(camera_model)
 
 
-add_library(${PROJECT_NAME} SHARED
+add_library(${PROJECT_NAME} STATIC
 #    src/chessboard/Chessboard.cc
 #    src/calib/CameraCalibration.cc
     src/camera_models/Camera.cc

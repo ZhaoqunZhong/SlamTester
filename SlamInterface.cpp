@@ -5,6 +5,7 @@
 #include "SlamInterface.h"
 #include "glog/logging.h"
 #include <fstream>
+#include <filesystem>
 
 // DECLARE_bool(resizeAndUndistort);
 
@@ -222,8 +223,12 @@ namespace SlamTester {
             if (i >= 8) {
                 // time and pose
                 gt_times_s.push_back(data(0) / 1e9);
-                gt_poses.emplace_back(data(1), data(2), data(3), data(5),
-                                      data(6), data(7), data(4));
+                // gt_poses.emplace_back(data(1), data(2), data(3), data(5),
+                //                       data(6), data(7), data(4));
+                Eigen::Matrix<double, 7, 1> pose;
+                pose << data(1), data(2), data(3), data(5),
+                                      data(6), data(7), data(4);
+                gt_poses.push_back(pose);
             }
         }
         // Finally close the file

@@ -8,6 +8,7 @@
 #include "opencv2/opencv.hpp"
 #include "Eigen/Eigen"
 #include "glog/logging.h"
+#include <memory>
 
 DECLARE_bool(resizeAndUndistort);
 

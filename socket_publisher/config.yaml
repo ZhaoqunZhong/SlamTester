@@ -1,5 +1,5 @@
 emitting_interval: 15000
 image_quality: 50
-server_uri: "http://localhost:3000"
+server_uri: "http://10.10.34.76:3000"
 publish_points: false
 pose_source: "imu"

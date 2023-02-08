@@ -4,9 +4,10 @@
 
 #include <iostream>
 #include <sys/time.h>
-#include "PangolinViewer.h"
+#include <thread>
+
+// #include "PangolinViewer.h"
 #include "socket_publisher/publisher.h"
-// #include "backward.hpp"
 
 #include "RosbagStorage/rosbag/view.h"
 #include "MessageType/sensor_msgs/Image.h"
@@ -36,6 +37,7 @@ DEFINE_bool(skipCamMsgIfLag, false, "Skip image if algorithm processing lags beh
 DEFINE_bool(showOrigCamStream, false, "");
 DEFINE_string(viewer, "", "Choose one from {pangolin, socket}");
 DEFINE_string(socketConfig, "", "Path to socket publisher config file.");
+DEFINE_double(bag_play_rate, 1.0, "");
 
 // Finite automata to sync acc and gyr.
 enum Input {acc,gyr} cur_input;
@@ -254,7 +256,7 @@ int main(int argc, char *argv[]) {
     if (FLAGS_algorithm == "vins_mono")
         algorithm_inter = std::make_unique<VinsAlgorithm>(FLAGS_algoConfig);
     else if (FLAGS_algorithm == "example_undistort")
-        algorithm_inter = std::make_unique<SlamTester::PangolinFakeAlgorithm>();
+        ;// algorithm_inter = std::make_unique<SlamTester::PangolinFakeAlgorithm>();
     else if (FLAGS_algorithm == "dso") {
         algorithm_inter = std::make_unique<DsoAlgorithm>();
     }
@@ -266,10 +268,10 @@ int main(int argc, char *argv[]) {
     algorithm_inter->input_interfaces.push_back(input_inter);
 
     /// Set up outputs.
-    std::shared_ptr<SlamTester::PangolinViewer> pango_viewer;
+    // std::shared_ptr<SlamTester::PangolinViewer> pango_viewer;
     std::shared_ptr<socket_publisher::publisher> socket_viewer;
     if (FLAGS_viewer == "pangolin") {
-        if (FLAGS_resizeAndUndistort)
+/*        if (FLAGS_resizeAndUndistort)
             pango_viewer = std::make_shared<SlamTester::PangolinViewer>(input_inter->orig_w,
                input_inter->orig_h, input_inter->inner_w, input_inter->inner_h,
                input_inter->gt_poses,input_inter->gt_times_s, false);
@@ -277,7 +279,7 @@ int main(int argc, char *argv[]) {
             pango_viewer = std::make_shared<SlamTester::PangolinViewer>(input_inter->orig_w,
                 input_inter->orig_h, input_inter->orig_w, input_inter->orig_h,
                 input_inter->gt_poses,input_inter->gt_times_s, false);
-        algorithm_inter->output_interfaces.push_back(pango_viewer);
+        algorithm_inter->output_interfaces.push_back(pango_viewer);*/
     } else if (FLAGS_viewer == "socket") {
         YAML::Node socket_config = YAML::LoadFile(FLAGS_socketConfig);
         socket_viewer = std::make_shared<socket_publisher::publisher>(socket_config);
@@ -290,8 +292,8 @@ int main(int argc, char *argv[]) {
 
     // Set up data threads.
     std::thread dataThread([&]() {
-        if (FLAGS_viewer == "pangolin")
-            pango_viewer->blockWaitForStart();
+/*        if (FLAGS_viewer == "pangolin")
+            pango_viewer->blockWaitForStart();*/
 
         ob_slam::rosbag::Bag play_bag;
         play_bag.open(input_inter->data_bag, static_cast<uint32_t>(ob_slam::rosbag::BagMode::Read));
@@ -308,14 +310,14 @@ int main(int argc, char *argv[]) {
         for (iter = view.begin(), i = 0; iter != view.end(); iter++, i++) {
             // LOG_FIRST_N(INFO, 50) << "ros topic: " << iter->getTopic();
 
-            if (FLAGS_viewer == "pangolin") {
+/*            if (FLAGS_viewer == "pangolin") {
                 if (!pango_viewer->isRunning())
                     break;
-            }
+            }*/
 
             struct timeval tv_now; gettimeofday(&tv_now, nullptr);
             double sSinceStart = (tv_now.tv_sec-tv_start.tv_sec + (tv_now.tv_usec-tv_start.tv_usec)/1e6) - initial_offset;
-            double bag_time_since_start = (iter->getTime().toSec() - firstMsgTime) /((FLAGS_viewer == "pangolin") ? pango_viewer->getPlayRate() : 1.0);
+            double bag_time_since_start = (iter->getTime().toSec() - firstMsgTime) /FLAGS_bag_play_rate;
 
             if (bag_time_since_start == 0) {
                 initial_offset = sSinceStart;
@@ -325,7 +327,7 @@ int main(int argc, char *argv[]) {
             // Since we didn't launch different threads for different sensor streams like online running,
             // we choose not to skip imu messages to stay closer to online scenario.
             else if (input_inter->monoImg_topic == iter->getTopic() && FLAGS_skipCamMsgIfLag &&
-                    sSinceStart - bag_time_since_start > 0.033/((FLAGS_viewer == "pangolin") ? pango_viewer->getPlayRate() : 1.0)) {// Skip rgb msg if lagging more than 33ms.
+                    sSinceStart - bag_time_since_start > 0.033/FLAGS_bag_play_rate ) {// Skip rgb msg if lagging more than 33ms.
                 // LOG(WARNING) << "Skipped msg topic: " << iter->getTopic();
                 LOG(WARNING) << "[SKIPPED ROS MSG]Skipped rgb msg at bag time: " << std::to_string(iter->getTime().toSec());
             continue;
@@ -387,8 +389,8 @@ int main(int argc, char *argv[]) {
     if (FLAGS_viewer == "socket")
         socket_viewer->run();
 
-    if (FLAGS_viewer == "pangolin")
-        pango_viewer->run();// Make macOS happy.
+/*    if (FLAGS_viewer == "pangolin")
+        pango_viewer->run();*/// Make macOS happy.
     // std::thread pango_thread([&]{pango_viewer->run();});
 
     dataThread.join();
