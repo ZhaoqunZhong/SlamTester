@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10.2)
 project(custom_rosbag)
 
 find_package(glog REQUIRED)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 4 REQUIRED)
 
 FILE(GLOB_RECURSE RosbagStorage_SOURCES
         src/RosbagStorage/*.c

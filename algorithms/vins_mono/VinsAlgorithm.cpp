@@ -5,8 +5,10 @@
 #include "VinsAlgorithm.h"
 #include "system.h"
 #include <memory>
+#include "glog/logging.h"
 
 VinsAlgorithm::VinsAlgorithm(string &config) {
+    // LOG(INF) << "Debug point reach";
     vins_algo = std::make_unique<System>(config, this);
 }
 

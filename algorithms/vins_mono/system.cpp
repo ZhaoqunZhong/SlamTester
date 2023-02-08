@@ -350,7 +350,11 @@ void System::process()
                 Matrix4d world_to_imu = imu_to_world.inverse();
                 for (auto &oi : algoInterface->output_interfaces) {
                     oi->publishImuPose(world_to_imu, estimator.Headers[vins_estimator::WINDOW_SIZE]);
-                    Matrix4d world_to_cam = world_to_imu * algoInterface->input_interfaces[0]->camToImu.inverse();
+                    // Matrix4d world_to_cam = world_to_imu * algoInterface->input_interfaces[0]->camToImu.inverse();
+                    Eigen::Matrix4d T_ic = Eigen::Matrix4d::Identity();
+                    T_ic.block<3,3>(0,0) = estimator.ric[0];
+                    T_ic.block<3,1>(0,3) = estimator.tic[0];
+                    Matrix4d world_to_cam = world_to_imu * T_ic;
                     oi->publishCamPose(world_to_cam, estimator.Headers[vins_estimator::WINDOW_SIZE]);
                 }
 /*                vPath_to_draw.push_back(p_wi);

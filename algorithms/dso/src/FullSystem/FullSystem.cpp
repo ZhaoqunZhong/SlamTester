@@ -903,9 +903,9 @@ void FullSystem::addActiveFrame( ImageAndExposure* image, int id )
             for (auto &oi: algoInterface->output_interfaces) {
             	Eigen::Matrix4d world_to_cam = cam_pose.inverse();
                 oi->publishCamPose(world_to_cam, fh->shell->timestamp);
-                Eigen::Matrix4d imu_pose = algoInterface->input_interfaces[0]->camToImu.inverse() * cam_pose;
+/*                Eigen::Matrix4d imu_pose = algoInterface->input_interfaces[0]->camToImu.inverse() * cam_pose;
                 Eigen::Matrix4d world_to_imu = imu_pose.inverse();
-                oi->publishImuPose(world_to_imu, fh->shell->timestamp);
+                oi->publishImuPose(world_to_imu, fh->shell->timestamp);*/
             }
         }
 

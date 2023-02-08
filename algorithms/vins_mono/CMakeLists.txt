@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.10.2)
 
 project(vins_mono)
 
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 4 REQUIRED)
 find_package(Ceres 1.14 REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Boost 1.70 REQUIRED COMPONENTS filesystem)

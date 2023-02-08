@@ -3,7 +3,7 @@ project(SlamTester)
 
 # find_package(Pangolin REQUIRED)
 find_package(Eigen3 REQUIRED)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 4 REQUIRED)
 find_package(glog REQUIRED)
 find_package(yaml-cpp REQUIRED)
 #message("==> OpenCV_INCLUDE_DIRS : ${OpenCV_INCLUDE_DIRS}")
@@ -17,6 +17,8 @@ add_subdirectory(algorithms/dso)
 # set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 # set(BUILD_SHARED_LIBS OFF)
 # set(CMAKE_EXE_LINKER_FLAGS "-static")
+
+add_subdirectory(ros_wrap)
 
 add_executable(${PROJECT_NAME} 
         main.cpp
@@ -49,3 +51,5 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin") # MacOS
             /opt/homebrew/include # for GL/glew.h
             )
 endif ()
+
+

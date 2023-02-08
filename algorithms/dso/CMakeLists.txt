@@ -18,7 +18,7 @@ find_package(glog REQUIRED)
 #find_package(LibZip QUIET)
 find_package(Pangolin QUIET )
 #message("==> Pangolin_LIBRARY : ${Pangolin_LIBRARY}")
-find_package(OpenCV QUIET)
+find_package(OpenCV 4 QUIET)
 
 # flags
 add_definitions("-DENABLE_SSE")

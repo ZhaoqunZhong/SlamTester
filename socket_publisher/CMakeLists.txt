@@ -18,7 +18,7 @@ protobuf_generate_cpp(MAP_PB_SOURCE MAP_PB_HEADER protobuf/map_segment.proto)
 
 # ----- Configure SocketPublisher library -----
 
-add_library(socket_publisher
+add_library(socket_publisher SHARED
             ${CMAKE_CURRENT_SOURCE_DIR}/data_serializer.h
             ${CMAKE_CURRENT_SOURCE_DIR}/publisher.h
             ${CMAKE_CURRENT_SOURCE_DIR}/socket_client.h
@@ -47,7 +47,6 @@ target_include_directories(socket_publisher
 
 target_link_libraries(socket_publisher
                       PUBLIC
-                      ${PROJECT_NAME}
                       opencv_imgcodecs
                       Eigen3::Eigen
                       # sioclient
